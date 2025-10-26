@@ -57,6 +57,10 @@ export class Dash implements OnInit {
 
   loading = true;
 
+  pendingStudents: any[] = [];
+
+  isPendingEnabled: boolean = false;
+
   constructor(private studentService: StudentService, private cdr: ChangeDetectorRef,private http: HttpClient,private router: Router) {}
 
   ngOnInit() {
@@ -64,7 +68,7 @@ export class Dash implements OnInit {
     this.computeStats();
     this.loadDepartments();
     this.loadStudents();
-
+    this.pendingGrades();
     forkJoin({
       students: this.studentService.getAllStudents(),
       departments: this.studentService.getDepartments()
@@ -335,6 +339,9 @@ get searchStudents() {
       results = results.filter(s => s.department === dept);
     }
 
+    if(this.isPendingEnabled){
+      results = results.filter(s => this.isGradePending(s));
+    }
     return results;
 
 }
@@ -343,6 +350,7 @@ get searchStudents() {
 clearSearch() {
   this.gradeSearchTerm = "";
   this.gradeSearchDept = "";
+  this.isPendingEnabled = false;
   // this.loadStudents();
 }
 
@@ -501,11 +509,17 @@ logout(){
 pendingGrades(){
   this.studentService.getTotalPendingGrades().subscribe(data => {
     this.stats.pendingGrades = data.totalPending;
-
+    this.pendingStudents = data.students;
   })
 }
 
-
+isGradePending(student: any): boolean {
+  return this.pendingStudents.some(s => s.studentId === student._id);
+}
+//pending toggle button
+toggleStatus() {
+  this.cdr.detectChanges();
+}
 
 }
 

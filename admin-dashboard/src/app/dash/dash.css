@@ -687,19 +687,12 @@ input[readonly] {
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.3s;
+  margin-left: 80px;
 }
 
 .clear-filter:hover {
   background-color: #d32f2f;
 }
-
-
-
-
-
-
-
-
 
 .results-section {
   padding: 20px;
@@ -855,7 +848,9 @@ margin-bottom: 10px;
     border-radius: 4px;
     font-size: 14px;
 }
-
+.grade-search{
+  width:900px;
+}
 .grade-select {
     width: 60px;
     padding: 6px 8px;
@@ -1007,3 +1002,63 @@ margin-bottom: 10px;
   to { opacity: 1; transform: scale(1); }
 }
 
+/* grade-status */
+.pending {
+  color: red;
+  font-weight: bold;
+}
+
+.done {
+  color: green;
+  font-weight: bold;
+}
+
+/* pending-switch */
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 45px;
+  height: 20px;
+  margin-left: 5px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 15px;
+  left: 4px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+/* When checked */
+.pending-btn:checked + .slider {
+  background-color: #4CAF50;
+}
+
+.pending-btn:checked + .slider:before {
+  transform: translateX(22px);
+}

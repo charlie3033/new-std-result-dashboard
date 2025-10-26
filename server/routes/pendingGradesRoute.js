@@ -4,7 +4,7 @@ const pendingGrades = require('../models/PendingGrades');
 
 router.get("/", async (req, res) => {
   try {
-    const pendingStudents = await pendingGrades.find().select("name department semester");
+    const pendingStudents = await pendingGrades.find().select("name department semester studentId");
     const totalPending = pendingStudents.length;
     res.json({ totalPending, students: pendingStudents });
   } catch (err) {

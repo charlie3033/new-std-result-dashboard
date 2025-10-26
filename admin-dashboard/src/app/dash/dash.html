@@ -79,7 +79,7 @@
               <button class="action-btn" (click)="selectedTab='grade'">📝 Update Grades</button>
               <button class="action-btn" (click)="prepareAddStudent()">👤 Add New Student</button>
               <button class="action-btn" (click)="prepareAllResult()">📊 Check Results</button>
-              <button class="action-btn">🏢 Departments & Courses</button>
+              <button class="action-btn" (click)="selectedTab='dept'">🏢 Departments & Courses</button>
             </div>
           </div>
       </div>
@@ -192,6 +192,13 @@
               <option *ngFor="let d of departments" [value]="d.name">{{d.name}}</option>
             </select>
             </label>
+
+            <label class="pending-label">Show Pending Grades</label>
+            <label class="switch">
+              <input class = "pending-btn" type="checkbox" [(ngModel)]="isPendingEnabled" (change)="toggleStatus()">
+              <span class="slider"></span>
+
+            </label>
             <button class="clear-filter" (click)="clearSearch()">Clear</button>
           </label>
           </div>
@@ -202,6 +209,7 @@
               <th>Name</th>
               <th>Department</th>
               <th>Semester</th>
+              <th>Status</th>
               <th>Action</th>
             </thead>
             <tbody>
@@ -210,6 +218,11 @@
                 <td>{{ s.name }}</td>
                 <td>{{ s.department }}</td>
                 <td>{{ s.semester }}</td>
+                <td>
+                  <span [ngClass]="{'pending': isGradePending(s), 'done': !isGradePending(s)}">
+                    {{ isGradePending(s) ? 'Pending' : 'Done'}}
+                  </span>
+                </td>
                 <td>
                   <button class="edit-grade btn secondary"(click)="selectStudentForGrades(s)">Edit Grades</button>
                 </td>
@@ -513,8 +526,43 @@
 
   <!-- ---------Departments & courses----------- -->
   <div *ngIf="selectedTab==='dept'" class="tab">
+    <h2 class="section-title">Departments & Courses</h2>
 
+      <div *ngIf="departments.length === 0">
+        <p>No departments found.</p>
+      </div>
+
+    <div *ngFor="let dept of departments" class="department-card">
+      <h3>{{ dept.name || dept }}</h3>
+
+      <div *ngIf="getCoursesByDept(dept.name || dept).length > 0; else noCourses">
+        <table class="course-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Course Name</th>
+              <th>Semester</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of getCoursesByDept(dept.name || dept)">
+              <td>{{ c.code }}</td>
+              <td>{{ c.name }}</td>
+              <td>{{ c.semester }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #noCourses>
+        <p class="no-course">No courses found for this department.</p>
+      </ng-template>
+    </div>
   </div>
+
+
+
+
 
 </div>
 </div>
