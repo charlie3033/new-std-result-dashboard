@@ -1,11 +1,14 @@
 const EXCEL_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
 
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StudentService } from './student.service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { forkJoin } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 
 
 @Component({
@@ -22,7 +25,7 @@ export class Dash implements OnInit {
   selectedTab: string = 'dashboard';
 
   // For Add Student
-  newStudent: any = { name: '', department: '' };
+  newStudent: any = { name: '', department: '', semester: '' };
 
   // For Edit Student Info
   editInfoStudent: any = null;
@@ -31,7 +34,7 @@ export class Dash implements OnInit {
   stats = {
     totalStudents: 0,
     totalDepartments: 0,
-    avgSemester: 0
+    pendingGrades: 0
   };
 
   // For Edit Marks
@@ -48,13 +51,27 @@ export class Dash implements OnInit {
   // For Notification
   notifications: { message: string, type: 'success' | 'error' | 'info' }[] = [];
 
-  constructor(private studentService: StudentService) {}
+  loading = true;
+
+  constructor(private studentService: StudentService, private cdr: ChangeDetectorRef,private http: HttpClient,private router: Router) {}
 
   ngOnInit() {
-    // this.loadActivityLog();
-    this.loadStudents();
-    this.loadDepartments();
+    this.loadActivityLog();
     this.computeStats();
+    this.loadDepartments();
+    this.loadStudents();
+
+    forkJoin({
+      students: this.studentService.getAllStudents(),
+      departments: this.studentService.getDepartments()
+    }).subscribe(({ students, departments }) => {
+      this.students = students || [];
+      this.departments = departments || [];
+      this.computeStats();
+      this.loading = false;
+      this.cdr.detectChanges();
+    });
+
   }
 
   // ----------------- Students -----------------
@@ -66,6 +83,7 @@ export class Dash implements OnInit {
         this.students = data || [];
       }
       this.computeStats();
+      this.cdr.detectChanges();
     });
   }
 
@@ -73,6 +91,7 @@ export class Dash implements OnInit {
   loadDepartments() {
     this.studentService.getDepartments().subscribe(data => {
       this.departments = data || [];
+      this.computeStats();
     });
   }
 
@@ -82,94 +101,103 @@ export class Dash implements OnInit {
     this.selectedTab = 'add';
   }
 
-  // addStudent() {
-  //   if (!this.newStudent.name || !this.newStudent.department) {
-  //     this.showNotification("Name & Department are required", "error");
-  //     return;
-  //   }
+  addStudent() {
+    if (!this.newStudent.name || !this.newStudent.department) {
+      this.showNotification("Name & Department are required", "error");
+      return;
+    }
 
-  //   this.studentService.addStudent(this.newStudent).subscribe(() => {
-  //     this.loadStudents();
-  //     this.computeStats();
-  //     this.logActivity(`Added student ${this.newStudent.name} (${this.newStudent.department})`);
-  //     this.showNotification("Student added successfully!", "success");
-  //     this.cancel();
-  //   });
-  // }
+    this.studentService.addStudent(this.newStudent).subscribe(() => {
+      this.loadStudents();
+      this.computeStats();
+      this.logActivity(`Added student ${this.newStudent.name} (${this.newStudent.department})`);
+      this.showNotification("Student added successfully!", "success");
+      this.cancel();
+    });
+  }
 
   // ----------------- Edit Info -----------------
-  // openEditInfo(student: any) {
-  //   this.editInfoStudent = { ...student };
-  //   this.selectedTab = 'editInfo';
-  // }
+  openEditInfo(student: any) {
+    this.editInfoStudent = { ...student };
+    this.selectedTab = 'editInfo';
+  }
 
-  // saveStudentInfo() {
-  //   this.studentService.updateStudentByRoll(this.editInfoStudent.roll, this.editInfoStudent)
-  //     .subscribe(() => {
-  //       this.loadStudents();
-  //       this.computeStats();
-  //       this.logActivity(`Updated info for ${this.editInfoStudent.name}`);
-  //       this.showNotification("Student info updated!", "success");
-  //       this.cancel();
-  //     });
-  // }
+  saveStudentInfo() {
+    this.studentService.updateStudentByRoll(this.editInfoStudent.roll, this.editInfoStudent)
+      .subscribe(() => {
+        this.loadStudents();
+        this.computeStats();
+        this.logActivity(`Updated info for ${this.editInfoStudent.name}`);
+        this.showNotification("Student info updated!", "success");
+        this.cancel();
+        this.cdr.detectChanges();
+      });
+  }
 
   // ----------------- Edit Marks -----------------
-  // openEditMarks(student: any) {
-  //   this.studentService.getResultsByStudentId(student._id).subscribe(results => {
-  //     if (results.length > 0) {
-  //       this.editMarksStudent = student;
-  //       this.editResult = { ...results[0] };
-  //       this.selectedTab = 'editMarks';
-  //     } else {
-  //       this.showNotification("No result found for this student", "error");
-  //     }
-  //   });
-  // }
-
-  // saveStudentMarks() {
-  //   this.studentService.updateMarksByRoll(
-  //     this.editMarksStudent.roll,
-  //     this.editResult.subjects
-  //   ).subscribe(() => {
-  //     this.loadStudents();
-  //     this.computeStats();
-  //     this.logActivity(`Updated marks for ${this.editMarksStudent.name}`);
-  //     this.showNotification("Marks updated successfully!", "success");
-  //     this.cancel();
-  //   });
-  // }
+  openEditMarks(student: any) {
+    this.studentService.getResultsByStudentId(student._id).subscribe(results => {
+      if (results.length > 0) {
+        this.editMarksStudent = student;
+        this.editResult = { ...results[0] };
+        this.selectedTab = 'grade';
+        this.selectStudentForGrades(student);
+        this.gradeSearchTerm = student.roll;
+      } else {
+        this.showNotification("No result found for this student", "error");
+      }
+      this.cdr.detectChanges();
+    });
+  }
 
   // ----------------- Delete -----------------
-  // deleteStudent(student: any) {
-  //   if (confirm(`Delete ${student.name}?`)) {
-  //     this.studentService.deleteStudentByRoll(student.roll).subscribe(() => {
-  //       this.loadStudents();
-  //       this.computeStats();
-  //       this.logActivity(`Deleted student ${student.name}`);
-  //       this.showNotification("Student deleted!", "success");
-  //     });
-  //   }
-  // }
+  deleteStudent(student: any) {
+    if (confirm(`Delete ${student.name}?`)) {
+      this.studentService.deleteStudentByRoll(student.roll).subscribe(() => {
+        this.loadStudents();
+        this.computeStats();
+        this.logActivity(`Deleted student ${student.name}`);
+        this.showNotification("Student deleted!", "success");
+      });
+    }
+  }
 
   // ----------------- View Results -----------------
-  // openResults(student: any) {
-  //   this.resultStudent = student;
-  //   this.studentService.getResultsByStudentId(student._id).subscribe(results => {
-  //     this.studentResults = results;
-  //     this.selectedTab = 'results';
-  //   });
-  // }
+  openResults(student: any) {
+    this.resultStudent = student;
+    this.studentService.getResultsByStudentId(student._id).subscribe(results => {
+      this.studentResults = results;
+      this.selectedTab = 'results';
+      this.cdr.detectChanges();
+    });
+  }
+  //----------------View all results-------------------
+  prepareAllResult() {
+    this.selectedTab = 'AllResultTable';
+  }
 
   // ----------------- Cancel -----------------
-  // cancel() {
-  //   this.selectedTab = 'view';
-  //   this.editInfoStudent = null;
-  //   this.editMarksStudent = null;
-  //   this.resultStudent = null;
-  //   this.newStudent = { name: '', department: '' };
-  // }
+  cancel() {
+    this.selectedTab = 'student';
+    this.editInfoStudent = null;
+    this.editMarksStudent = null;
+    this.resultStudent = null;
+    this.newStudent = { name: '', department: '', semester: '' };
+  }
+  cancelAll() {
+    this.selectedTab = 'AllResultTable';
+    this.editInfoStudent = null;
+    this.editMarksStudent = null;
+    this.resultStudent = null;
+    this.newStudent = { name: '', department: '', semester: '' };
+  }
 
+  //---------------Clear Filter Controls------------
+  clearFilter(){
+    this.searchTerm = "";
+    this.filterDept = "";
+    this.loadStudents();
+  }
   // ----------------- Search + Sort -----------------
   searchTerm: string = "";
   sortField: string = "roll";
@@ -204,70 +232,256 @@ export class Dash implements OnInit {
     return data;
   }
 
-  // setSort(field: string) {
-  //   if (this.sortField === field) {
-  //     this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
-  //   } else {
-  //     this.sortField = field;
-  //     this.sortDirection = "asc";
-  //   }
-  // }
+  setSort(field: string) {
+    if (this.sortField === field) {
+      this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
+    } else {
+      this.sortField = field;
+      this.sortDirection = "asc";
+    }
+  }
 
   // ----------------- Export -----------------
-  // private saveExcel(data: any[], fileName: string) {
-  //   if (!data || data.length === 0) {
-  //     this.showNotification("No data to export!", "error");
-  //     return;
-  //   }
+  private saveExcel(data: any[], fileName: string) {
+    if (!data || data.length === 0) {
+      this.showNotification("No data to export!", "error");
+      return;
+    }
 
-  //   const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
-  //   const wb: XLSX.WorkBook = XLSX.utils.book_new();
-  //   XLSX.utils.book_append_sheet(wb, ws, "Students");
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Students");
 
-  //   const excelBuffer: any = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-  //   const blob: Blob = new Blob([excelBuffer], { type: EXCEL_TYPE });
-  //   saveAs(blob, fileName + ".xlsx");
+    const excelBuffer: any = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob: Blob = new Blob([excelBuffer], { type: EXCEL_TYPE });
+    saveAs(blob, fileName + ".xlsx");
 
-  //   this.showNotification(`${fileName}.xlsx exported successfully`, "success");
-  // }
+    this.showNotification(`${fileName}.xlsx exported successfully`, "success");
+  }
 
-  // exportAllStudents() {
-  //   this.saveExcel(this.students, "all-students");
-  // }
+  exportAllStudents() {
+    this.saveExcel(this.students, "all-students");
+  }
 
-  // exportFilteredStudents() {
-  //   this.saveExcel(this.filteredStudents, "filtered-students");
-  // }
+  exportFilteredStudents() {
+    this.saveExcel(this.filteredStudents, "filtered-students");
+  }
 
   // ----------------- Stats -----------------
   private computeStats() {
-    const list = this.filteredStudents;
+    const list = [...this.students];
     this.stats.totalStudents = list.length;
     this.stats.totalDepartments = new Set(list.map(s => s.department)).size;
-    const sumSem = list.reduce((acc, s) => acc + (Number(s.semester) || 0), 0);
-    this.stats.avgSemester = list.length ? Math.round((sumSem / list.length) * 10) / 10 : 0;
   }
 
   // ----------------- Activity Log -----------------
-    // loadActivityLog() {
-    //   this.studentService.getActivityLogs().subscribe(data => {
-    //     this.activityLog = data || [];
-    //   });
-    // }
+    loadActivityLog() {
+      this.studentService.getActivityLogs().subscribe(data => {
+        this.activityLog = data || [];
+      });
+    }
 
     // Save log
-    // private logActivity(message: string) {
-    //   this.studentService.addActivityLog(message).subscribe(() => {
-    //     this.loadActivityLog(); // refresh UI after adding
-    //   });
-    // }
+    private logActivity(message: string) {
+      this.studentService.addActivityLog(message).subscribe(() => {
+        this.loadActivityLog(); // refresh UI after adding
+      });
+    }
 
   // ----------------- Notifications -----------------
-  // private showNotification(message: string, type: 'success' | 'error' | 'info' = 'info') {
-  //   const note = { message, type };
-  //   this.notifications.push(note);
-  //   setTimeout(() => {
-  //     this.notifications = this.notifications.filter(n => n !== note);
-  //   }, 3500);
-  // }
+  private showNotification(message: string, type: 'success' | 'error' | 'info' = 'info') {
+    const note = { message, type };
+    this.notifications.push(note);
+    setTimeout(() => {
+      this.notifications = this.notifications.filter(n => n !== note);
+    }, 3500);
+  }
+
+  // ----------------- Grade Management -----------------
+gradeSearchTerm: string = '';
+gradeSearchDept: string = '';
+gradeSearchResults: any[] = [];
+selectedStudentForGrade: any = null;
+
+
+// Search students by roll, name, department
+get searchStudents() {
+  let results = [...this.students];
+  const term = this.gradeSearchTerm.trim().toLowerCase();
+  const dept = this.gradeSearchDept.trim();
+    // Search filter
+    if (term) {
+      results= results.filter(
+        s =>
+          s.name.toLowerCase().includes(term) ||
+          s.roll.toLowerCase().includes(term)
+      );
+    }
+
+    if(dept && dept !== 'All'){
+      results = results.filter(s => s.department === dept);
+    }
+
+    return results;
+
 }
+
+// Clear search fields
+clearSearch() {
+  this.gradeSearchTerm = "";
+  this.gradeSearchDept = "";
+  // this.loadStudents();
+}
+
+// Select student to edit grades
+selectStudentForGrades(student: any) {
+  this.selectedStudentForGrade = student;
+  this.studentService.getResultsByStudentId(student._id).subscribe(results => {
+    if (results.length > 0) {
+      this.editResult = { ...results[0] };
+    } else {
+      this.editResult = { subjects: [] }; // Or populate default subjects
+    }
+    this.cdr.detectChanges();
+  });
+}
+
+// Save updated grades
+saveStudentMarks() {
+  if (!this.selectedStudentForGrade || !this.editResult) return;
+
+  this.studentService.updateMarksByRoll(
+    this.selectedStudentForGrade.roll,
+    this.editResult.subjects
+  ).subscribe(() => {
+    this.loadStudents();
+    this.computeStats();
+    this.logActivity(`Updated grades for ${this.selectedStudentForGrade.name}`);
+    this.showNotification("Grades updated successfully!", "success");
+    this.cancelGradeUpdate();
+  });
+}
+
+// Cancel grade update
+cancelGradeUpdate() {
+  this.selectedStudentForGrade = null;
+  this.editResult = null;
+}
+
+
+// ----------------- All Result Management -----------------
+resultSearchTerm: string = '';
+resultSearchDept: string = '';
+selectedResultStudent: any = null;
+selectedResultData: any = null;
+
+get filteredResults() {
+  let data = [...this.students];
+  const term = this.resultSearchTerm.trim().toLowerCase();
+  const dept = this.resultSearchDept.trim();
+
+  if (term) {
+    data = data.filter(
+      s =>
+        s.name.toLowerCase().includes(term) ||
+        s.roll.toLowerCase().includes(term)
+    );
+  }
+
+  if (dept && dept !== '') {
+    data = data.filter(s => s.department === dept);
+  }
+
+  return data;
+}
+
+clearResultFilters() {
+  this.resultSearchTerm = '';
+  this.resultSearchDept = '';
+}
+
+viewResult(student: any) {
+  this.selectedResultStudent = student;
+  this.studentService.getResultsByStudentId(student._id).subscribe(results => {
+    if (results.length > 0) {
+      this.selectedResultData = results[0];
+      this.selectedTab = 'selectedResultStudent';
+    } else {
+      this.selectedResultData = { subjects: [] };
+      this.showNotification("No result found for this student", "info");
+    }
+    this.cdr.detectChanges();
+  });
+}
+
+closeResultView() {
+  this.selectedResultStudent = null;
+  this.selectedResultData = null;
+  this.selectedTab = 'AllResultTable';
+}
+closeSingleResultView() {
+  this.selectedResultStudent = null;
+  this.selectedResultData = null;
+  this.selectedTab = 'student';
+}
+
+// Calculate total marks
+totalMarks(subjects: any[]) {
+  return subjects?.reduce((sum, s) => sum + (s.marks || 0), 0);
+}
+
+// Calculate percentage
+percentage(subjects: any[]) {
+  if (!subjects || subjects.length === 0) return 0;
+  const total = this.totalMarks(subjects);
+  return ((total / (subjects.length * 100)) * 100).toFixed(2);
+}
+
+// Get grade for subject
+getGrade(marks: number) {
+  if (marks >= 90) return 'A+';
+  if (marks >= 80) return 'A';
+  if (marks >= 70) return 'B';
+  if (marks >= 60) return 'C';
+  if (marks >= 50) return 'D';
+  return 'F';
+}
+
+// status pass/fail
+getStatus(subjects: any[]) {
+  if(!subjects || subjects.length === 0) return 'No Data';
+  const failed = subjects.some(sub => sub.marks < 35);
+  return failed ? 'Fail' : 'Pass';
+}
+
+statusClass(subjects: any[]){
+  return this.getStatus(subjects) === 'Pass' ? 'status-pass' : 'status-fail';
+}
+
+viewSingleResult(student: any) {
+  this.selectedResultStudent = student;
+  this.studentService.getResultsByStudentId(student._id).subscribe(results => {
+    if (results.length > 0) {
+      this.selectedResultData = results[0];
+      this.selectedTab = 'selectedSingleResultStudent';
+    } else {
+      this.selectedResultData = { subjects: [] };
+      this.showNotification("No result found for this student", "info");
+    }
+    this.cdr.detectChanges();
+  });
+}
+
+
+//logout button
+logout(){
+  localStorage.removeItem('token');
+
+  this.showNotification("Logged out successfully!","info");
+
+  setTimeout(()=>{
+        this.router.navigate(['/login']);
+  });
+}
+}
+

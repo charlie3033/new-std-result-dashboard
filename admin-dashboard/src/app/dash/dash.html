@@ -2,49 +2,492 @@
 
   <!-- sidebar -->
   <div class="sidebar">
-    <h1>Admin Panel</h1>
-    <button [class.active]="selectedTab==='dashboard'" (click)="selectedTab='dashboard'">Dashboard</button>
-    <button [class.active]="selectedTab==='student'" (click)="selectedTab='student'">Manage Students</button>
-    <button [class.active]="selectedTab==='grade'" (click)="selectedTab='grade'">Manage Grades</button>
-    <!-- <button [class.active]="selectedTab==='exportAll'" (click)="exportAll()">Export Whole Data</button> -->
-    <button [class.active]="selectedTab==='activity'" (click)="selectedTab='activity'">Activity Log</button>
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">
+          <span>A</span>
+        </div>
+          <span class="logo-text">Admin Panel</span>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="sidebar-button" [class.active]="selectedTab==='dashboard'" (click)="selectedTab='dashboard'">Dashboard</button>
+      <button class="sidebar-button" [class.active]="selectedTab==='student'" (click)="selectedTab='student'">Manage Students</button>
+      <button class="sidebar-button" [class.active]="selectedTab==='grade'" (click)="selectedTab='grade'">Manage Grades</button>
+
+      <button class="sidebar-button" [class.active]="selectedTab==='activity'" (click)="selectedTab='activity'">Activity Log</button>
+    </div>
+      <button class="export" [class.active]="selectedTab==='exportAll'" (click)="exportAllStudents()">Export Whole Students Data</button>
+
+      <div class="user-profile">
+        <div class="user-avatar">AD</div>
+        <div class="user-info">
+            <div class="user-name">Admin User</div>
+            <div class="user-major">System Administrator</div>
+        </div>
+      </div>
   </div>
 
-  <!-- Tost notifications -->
-
+  <!-- Toast notifications -->
+  <div class="toast-container">
+    <div *ngFor="let note of notifications" class="toast" [ngClass]="note.type">
+      {{ note.message }}
+    </div>
+  </div>
 
   <!-- main -->
   <div class="main">
     <header class="header">
-        <h2 id="page-title">Admin Dashboard</h2>
+        <h1 id="page-title">Admin Dashboard</h1>
         <div class="header-action">
-          <button class="logOut-btn">Log Out</button>
+          <button class="logOut-btn" (click)="logout()">Log Out</button>
         </div>
     </header>
     <!-- dashboard stats -->
-    <div *ngIf="selectedTab==='dashboard'"class="card">
-      <h2>Dashboard Overview</h2>
-      <div class="stats-grid">
-        <div class="stat-card">  <!-- students -->
-          <h3>{{stats.totalStudents}}</h3>
-          <p>Total Students</p>
+    <div class="tab" *ngIf="selectedTab==='dashboard'">
+      <div class="card">
+        <div *ngIf="loading" class="loading-spinner">
+          Loading dashboard....
         </div>
-        <div class="stat-card">   <!-- departments -->
-          <h3>{{stats.totalDepartments}}</h3>
-          <p>Total Departments</p>
+        <div *ngIf="!loading">
+          <div class="overview-section">
+            <h2>Dashboard Overview</h2>
+            <p>Manage your institution's academic data and operations</p>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">  <!-- students -->
+              <h3>{{stats.totalStudents}}</h3>
+              <p>Total Students</p>
+            </div>
+            <div class="stat-card">   <!-- departments -->
+              <h3>{{stats.totalDepartments}}</h3>
+              <p>Total Departments</p>
+            </div>
+            <div class="stat-card">   <!-- grades -->
+              <h3>{{stats.pendingGrades}}</h3>
+              <p>Pending Grades</p>
+            </div>
+          </div>
         </div>
-        <div class="stat-card">   <!-- grades -->
-          <!-- <h3>{{stats.pendingGrades}}</h3> -->
-          <p>Pending Grades</p>
+      </div>
+
+      <div class="card">
+        <!-- ----Quick actions------ -->
+          <div class="quick-actions">
+            <h3>Quick Actions</h3>
+            <div class="action-buttons">
+              <button class="action-btn" (click)="selectedTab='grade'">📝 Update Grades</button>
+              <button class="action-btn" (click)="prepareAddStudent()">👤 Add New Student</button>
+              <button class="action-btn" (click)="prepareAllResult()">📊 Check Results</button>
+              <button class="action-btn">🏢 Departments & Courses</button>
+            </div>
+          </div>
+      </div>
+    </div>
+    <!-- manage students -->
+    <div class="tab" *ngIf="selectedTab==='student'">
+      <div class="main-header">
+          <h2>Student Management</h2>
+          <p>view and manage all students records</p>
+      </div>
+      <div class="std-card">
+        <div class="table-header">
+          <div><h2>All Students</h2></div>
+          <div class="top-controls">
+          <label>
+            Filter by Department:
+            <select class="filter" [(ngModel)]="filterDept" (change)="loadStudents()">
+              <option value="">All</option>
+              <option *ngFor="let d of departments" [value]="d.code">{{d.name}}</option>
+            </select>
+          </label>
+
+          <div class="search-bar">
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              placeholder="Search by name or roll..."
+            />
+          </div>
+          <button class="clear-filter" (click)="clearFilter()">Clear Controls</button>
+          </div>
+        </div>
+        <hr>
+        <!--Search + Filter -->
+        <div class="top-controls">
+          <button class="add-std-btn" (click)="prepareAddStudent()">➕ Add New Student</button>
+          <button class="add-std-btn" (click)="exportFilteredStudents()">💾 Export Filtered Students Data</button>
+        </div>
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th (click)="setSort('roll')">
+                Roll
+                <span *ngIf="sortField === 'roll'">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+              <th (click)="setSort('name')">
+                Name
+                <span *ngIf="sortField === 'name'">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+              <th (click)="setSort('department')">
+                Department
+                <span *ngIf="sortField === 'department'">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+              <th (click)="setSort('semester')">
+                Semester
+                <span *ngIf="sortField === 'semester'">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+              <th>Email</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let s of filteredStudents">
+              <td>{{s.roll}}</td>
+              <td>{{s.name}}</td>
+              <td>{{s.department}}</td>
+              <td>{{s.semester}}</td>
+              <td>{{s.email}}</td>
+              <td>
+                <button class="btn primary" (click)="openEditInfo(s)">Edit Info</button>
+                <button class="btn secondary" (click)="openEditMarks(s)">Marks</button>
+                <button class="btn success" (click)="viewSingleResult(s)">Results</button>
+                <button class="btn danger" (click)="deleteStudent(s)">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+    </div>
+
+    <!-- manage grades -->
+    <div *ngIf="selectedTab==='grade'" class="tab">
+      <div class="main-header">
+          <h2>Grade Management</h2>
+          <p>Update and manage student grades across all courses</p>
+      </div>
+      <div class="grade-container">
+        <div class="grade-search panel">
+          <h3>Find Student</h3>
+          <div class="top-controls">
+            <label class="grade-filter-control">
+            <div class="search-bar">
+            <input type="text"
+              [(ngModel)]="gradeSearchTerm"
+              placeholder="Search by name or roll.." />
+          </div>
+            <label class="grade-dept">Department
+            <select class="filter" [(ngModel)]="gradeSearchDept" (change)="loadStudents()">
+              <option value="">All</option>
+              <option *ngFor="let d of departments" [value]="d.name">{{d.name}}</option>
+            </select>
+            </label>
+            <button class="clear-filter" (click)="clearSearch()">Clear</button>
+          </label>
+          </div>
+
+          <table class="styled-table">
+            <thead>
+              <th>Roll</th>
+              <th>Name</th>
+              <th>Department</th>
+              <th>Semester</th>
+              <th>Action</th>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of searchStudents">
+                <td>{{ s.roll }}</td>
+                <td>{{ s.name }}</td>
+                <td>{{ s.department }}</td>
+                <td>{{ s.semester }}</td>
+                <td>
+                  <button class="edit-grade btn secondary"(click)="selectStudentForGrades(s)">Edit Grades</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+        </div>
+        <div class="upload-panel panel" >
+          <h3>Edit Marks</h3>
+            <div class="student-card">
+
+
+                <ng-container *ngIf="selectedStudentForGrade; else noMarks">
+                  <div class="student-header">
+                  <h4>{{selectedStudentForGrade.name}} ({{selectedStudentForGrade.roll}})</h4>
+                  </div>
+                  <div class="grade-inputs">
+                  <div *ngFor="let sub of editResult?.subjects; let i = index" class="grade-row">
+                    <label class="course-name">{{ sub.name }} :</label>
+                    <div class="grade-controls">
+                    <input type="number" class="grade-input" [(ngModel)]="editResult.subjects[i].marks" min="0" max="100" />
+                    </div>
+                  </div>
+                  </div>
+                  <button class="add-form-btn success" (click)="saveStudentMarks()">Save Grades</button>
+                  <button class="add-form-btn secondary" (click)="cancelGradeUpdate()">Cancel</button>
+                </ng-container>
+                <ng-template #noMarks><p class="noMarks">Select a student to edit marks.</p></ng-template>
+            </div>
         </div>
       </div>
     </div>
 
-    <!-- manage students -->
-    <div *ngIf="selectedTab==='student'" class="card">
-
+    <!-- activity log -->
+    <div *ngIf="selectedTab==='activity'" class="tab">
+      <div class="main-header">
+          <h2>Activity Log</h2>
+          <p>Log of activities performed by admins</p>
+      </div>
+      <div class="std-card">
+          <table class="activity-log-table">
+            <thead>
+              <tr>
+                <th>Date-Time</th>
+                <th>Activity</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let log of activityLog">
+                <td class="time">{{ log.time | date:'yyyy-MM-dd' }} &nbsp;&nbsp;&nbsp;{{log.time | date:'shortTime'}}</td>
+                <td class="msg">{{ log.message }}</td>
+              </tr>
+            </tbody>
+          </table>
+      </div>
     </div>
 
+    <!-- add student -->
+    <div *ngIf="selectedTab==='add'" class="tab">
+      <div class="main-header">
+        <h2>Add New Student</h2>
+        <p>Enter the details below to register a new student</p>
+      </div>
+      <div class="std-card">
+        <h2>Students Form</h2>
+        <br>
+        <form (ngSubmit)="addStudent()" #studentForm="ngForm">
+
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" name="name" [(ngModel)]="newStudent.name" required placeholder="Enter full name" />
+          </div>
+
+          <div class="form-group">
+            <label>Department</label>
+            <select name="department" [(ngModel)]="newStudent.department" required>
+              <option value="" disabled selected>Select Department</option>
+              <option *ngFor="let dept of departments" [value]="dept.name">
+                {{ dept.name }}
+              </option>
+            </select>
+          </div>
+
+            <div class="form-group">
+            <label>Semester</label>
+            <input type="number" name="semester" [(ngModel)]="newStudent.semester" min="1" max="8" required />
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="add-form-btn success" [disabled]="studentForm.invalid">💾 Save Student</button>
+            <button type="button" class="add-form-btn secondary" (click)="cancel()">❌ Cancel</button>
+          </div>
+
+        </form>
+    </div>
+    <div class="note-card">
+      <p class="note-title">Note :-</p>
+      <ul class="note-label-group">
+        <li class="note-label">RollNo, E-mail & Password will be auto-generated</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Edit Info -->
+  <div *ngIf="selectedTab==='editInfo'" class="tab">
+    <div class="main-header">
+      <h2>Edit Student Info</h2>
+      <p>Enter the details below to Edit student Info</p>
+    </div>
+    <ng-container *ngIf="editInfoStudent; else noInfo">
+      <div class="std-card">
+        <h2>Students Form</h2>
+        <br>
+      <form (ngSubmit)="saveStudentInfo()">
+        <div class="form-group">
+          <label>Roll Number</label>
+          <input type="text" name="roll" readonly [(ngModel)]="editInfoStudent.roll" disabled/>
+        </div>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" name="editName" [(ngModel)]="editInfoStudent.name"/>
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <select name="department" [(ngModel)]="editInfoStudent.department" required>
+            <option value="" disabled selected>Select Department</option>
+            <option *ngFor="let dept of departments" [value]="dept.name">
+              {{ dept.name }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Semester</label>
+          <input type="number" name="editSem" [(ngModel)]="editInfoStudent.semester" min="1" max="8" required />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" name="email" readonly [(ngModel)]="editInfoStudent.email" disabled/>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="add-form-btn success">Update</button>
+          <button type="button" class="add-form-btn secondary" (click)="cancel()">❌ Cancel</button>
+        </div>
+      </form>
+      </div>
+    </ng-container>
+    <ng-template #noInfo><p>Select a student to edit info.</p></ng-template>
+  </div>
+  <!-- Single Results -->
+  <div *ngIf="selectedTab==='selectedSingleResultStudent'" >
+    <ng-container *ngIf="selectedResultStudent; else noResults" >
+      <div class="result-header">
+        <h2>Student Results</h2>
+        <p>View academic performance by students</p>
+      </div>
+      <div class="result-panel">
+      <h3>{{selectedResultStudent.name}}  ({{selectedResultStudent.roll}})</h3>
+      <p>Department: {{ selectedResultStudent.department }}</p>
+      <table class="styled-table inner">
+        <thead>
+          <tr><th>Subject</th><th>Marks</th><th>Grade</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let subj of selectedResultData?.subjects">
+            <td>{{subj.name}}</td>
+            <td>{{subj.marks}} / 100</td>
+            <td>{{getGrade(subj.marks)}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="summary">
+        <p><b>Total:</b> {{totalMarks(selectedResultData.subjects)}} / 300</p>
+        <p><b>Percentage:</b> {{percentage(selectedResultData.subjects)}}%</p>
+        <p><b>Status:</b><span [ngClass]="statusClass(selectedResultData.subjects)">
+          {{getStatus(selectedResultData.subjects)}}</span></p>
+      </div>
+      <div class="actions">
+        <button class="add-form-btn secondary" (click)="closeSingleResultView()">Close</button>
+      </div>
+      </div>
+    </ng-container>
+    <ng-template #noResults><p>Select a student to view results.</p></ng-template>
+  </div>
+
+  <!-- ================== All RESULTS TAB ================== -->
+<div *ngIf="selectedTab === 'AllResultTable'" class="tab">
+  <div class="main-header">
+    <h2>Student Results</h2>
+    <p>View academic performance by students</p>
+  </div>
+  <div class="result-container">
+  <!-- Filter/search bar -->
+  <div class="result-filters">
+    <input
+      type="text"
+      [(ngModel)]="resultSearchTerm"
+      placeholder="Search by name or roll..."
+      class="result-input"
+    />
+
+    <select [(ngModel)]="resultSearchDept" (change)="loadStudents()" class="result-select">
+      <option value="">All Departments</option>
+      <option *ngFor="let dept of departments" [value]="dept.name">{{ dept.name }}</option>
+    </select>
+
+    <button class="clear-filter" (click)="clearResultFilters()">Clear</button>
+  </div>
+
+  <!-- Results table -->
+  <div class="result-table">
+  <table class="styled-table">
+    <thead>
+      <tr>
+        <th>Roll No</th>
+        <th>Name</th>
+        <th>Department</th>
+        <th>Semester</th>
+        <th>View Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let student of filteredResults">
+        <td>{{ student.roll }}</td>
+        <td>{{ student.name }}</td>
+        <td>{{ student.department }}</td>
+        <td>{{ student.semester }}</td>
+        <td>
+          <button class="view-btn" (click)="viewResult(student)">View</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  </div>
+</div>
+<!-- All Selected Results -->
+  <div *ngIf="selectedTab==='selectedResultStudent'" >
+    <ng-container *ngIf="selectedResultStudent; else noResults" >
+      <div class="result-header">
+        <h2>Student Results</h2>
+        <p>View academic performance by students</p>
+      </div>
+      <div class="result-panel">
+      <h3>{{selectedResultStudent.name}}  ({{selectedResultStudent.roll}})</h3>
+      <p>Department: {{ selectedResultStudent.department }}</p>
+      <table class="styled-table inner">
+        <thead>
+          <tr><th>Subject</th><th>Marks</th><th>Grade</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let subj of selectedResultData?.subjects">
+            <td>{{subj.name}}</td>
+            <td>{{subj.marks}} / 100</td>
+            <td>{{getGrade(subj.marks)}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="summary">
+        <p><b>Total:</b> {{totalMarks(selectedResultData.subjects)}} / 300</p>
+        <p><b>Percentage:</b> {{percentage(selectedResultData.subjects)}}%</p>
+        <p><b>Status:</b><span [ngClass]="statusClass(selectedResultData.subjects)">
+          {{getStatus(selectedResultData.subjects)}}</span></p>
+      </div>
+      <div class="actions">
+        <button class="add-form-btn secondary" (click)="closeResultView()">Close</button>
+      </div>
+      </div>
+    </ng-container>
+    <ng-template #noResults><p>Select a student to view results.</p></ng-template>
+  </div>
+
+
+
+  <!-- ---------Departments & courses----------- -->
+  <div *ngIf="selectedTab==='dept'" class="tab">
 
   </div>
+
+</div>
 </div>
