@@ -1,0 +1,94 @@
+
+    * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    }
+
+    html{
+      padding:0px;
+    }
+    body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(145deg, #4e73df, #1cc88a);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    }
+
+    .login-container {
+    background: #fff;
+    padding: 30px 40px;
+    border-radius: 10px;
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2);
+    width: 350px;
+    text-align: center;
+    margin-left:70px;
+    margin-right:70px;
+    }
+
+    .login-container h2 {
+    margin-bottom: 20px;
+    color: #333;
+    }
+
+    .login-container input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 15px;
+    font-size: 14px;
+    }
+
+    .login-container input:focus {
+    border-color: #4e73df;
+    outline: none;
+    }
+
+    .login-container button {
+    width: 100%;
+    padding: 12px;
+    background: #4e73df;
+    border: none;
+    border-radius: 5px;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+    }
+
+    .login-container button:hover {
+    background: #3751c7;
+    }
+
+    .error {
+    margin-top: 10px;
+    color: red;
+    font-size: 14px;
+    }
+
+.login-note-tab{
+  background-color: #fff;
+  padding:20px;
+  margin-top:40px;
+  border-radius: 10px;
+  width: 500px;
+  border: 2px solid red;
+  /* box-shadow:
+    0 -4px 6px rgb(252, 61, 61),
+    -6px -12px 24px rgb(252, 61, 61); */
+}
+.login{
+  justify-content: center;
+  /* display: flex; */
+}
+.note{
+  margin-left: 5px;
+  font-weight: bold;
+}
+.note-list{
+  margin-left: 30px;
+  font-size: 13px;
+}

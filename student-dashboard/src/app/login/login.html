@@ -1,0 +1,30 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Student Login</title>
+  </head>
+  <body>
+    <div class="login">
+      <div class="login-container">
+      <h2>Student Login</h2>
+      <form id="loginForm" (ngSubmit)="login()">
+        <input [(ngModel)]="email" name="email" placeholder="Email" required id="email"/>
+        <input [(ngModel)]="password" id="password" name="password" type="password" placeholder="Password" required />
+        <button type="submit">Login</button>
+      </form>
+      <p *ngIf="error" class="error">{{ error }}</p>
+      </div>
+      <br>
+      <div class="login-note-tab">
+        <p class="note">Note:-</p>
+        <ul class="note-list">
+          <li>password will be combination of :-</li>
+          <p>Students ( FirstName LastName RollNo.)</p>
+        </ul>
+      </div>
+    </div>
+
+  </body>
+</html>
+
+

@@ -1,0 +1,17 @@
+<div *ngIf="result">
+  <h2>Result - {{ result.studentName }}</h2>
+  <table>
+    <tr>
+      <th>Subject</th>
+      <th>Marks</th>
+      <th>Max Marks</th>
+    </tr>
+    <tr *ngFor="let s of result.subjects">
+      <td>{{ s.name }}</td>
+      <td>{{ s.marks }}</td>
+      <td>{{ s.maxMarks }}</td>
+    </tr>
+  </table>
+
+  <button (click)="printResult()">🖨️ Print</button>
+</div>
