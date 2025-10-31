@@ -22,6 +22,7 @@ export class Dash {
   total = 0;
   maxTotal = 0;
   percentage = 0;
+  uploadFlag = true;
 
   private baseUrl = 'http://localhost:3000/api';
   constructor(private cdr: ChangeDetectorRef,private http: HttpClient,private router: Router){}
@@ -34,12 +35,10 @@ export class Dash {
       return;
     }
     this.student = JSON.parse(stored);
-    console.log('student',this.student);
+    // console.log('student',this.student);
     this.loadCourses();
     this.loadResult();
-    if(this.selectedTab === 'profile' || this.selectedTab){
-
-    }
+    this.loadPendingStatus();
   }
 
   loadCourses(){
@@ -59,7 +58,7 @@ export class Dash {
       .subscribe({
         next: (data) => {
           this.result = data[0];
-          console.log(this.result);
+          // console.log(this.result);
           if(this.result){
             this.total = this.result.subjects.reduce((sum: number, s: any) => sum + s.marks, 0);
             this.maxTotal = this.result.subjects.reduce((sum: number, s: any) => sum + s.maxMarks, 0);
@@ -137,5 +136,17 @@ export class Dash {
     if(dept === 'CSE') return 'Computer Science';
     if(dept === 'ME') return 'Mechanical Engineering';
     if(dept === 'ECE') return 'Electronics and Communication';
+  }
+
+  loadPendingStatus(){
+    this.http.get<{totalPending: number; students: any[] }>(`http://localhost:3000/api/pendingGrades`)
+    .subscribe((res) => {
+      const pendingList = res.students || [];
+      const flag = pendingList.some((p: any) => p.studentId === this.student.id);
+      setTimeout(()=>{
+        this.uploadFlag = flag;
+        this.cdr.detectChanges();
+      });
+    });
   }
 }

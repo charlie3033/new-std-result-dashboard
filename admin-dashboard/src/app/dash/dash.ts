@@ -60,6 +60,7 @@ export class Dash implements OnInit {
   pendingStudents: any[] = [];
 
   isPendingEnabled: boolean = false;
+  isAllPendingEnabled: boolean = false;
 
   courses: any[] = [];
 
@@ -416,12 +417,16 @@ get filteredResults() {
     data = data.filter(s => s.department === dept);
   }
 
+  if(this.isAllPendingEnabled){
+    data = data.filter(s => this.isGradePending(s));
+  }
   return data;
 }
 
 clearResultFilters() {
   this.resultSearchTerm = '';
   this.resultSearchDept = '';
+  this.isAllPendingEnabled = false;
 }
 
 viewResult(student: any) {
@@ -523,12 +528,15 @@ isGradePending(student: any): boolean {
 toggleStatus() {
   this.cdr.detectChanges();
 }
+toggleAllStatus(){
+  this.cdr.detectChanges();
+}
 
 // department-courses
 loadCourses(){
   this.studentService.getAllCourses().subscribe(data => {
     this.courses = data || [];
-    console.log(this.courses);
+    // console.log(this.courses);
   });
 }
 

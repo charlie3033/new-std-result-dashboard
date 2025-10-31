@@ -122,7 +122,7 @@
           <thead>
             <tr>
               <th (click)="setSort('roll')">
-                Roll
+                Roll No
                 <span *ngIf="sortField === 'roll'">
                   {{ sortDirection === 'asc' ? '↑' : '↓' }}
                 </span>
@@ -145,7 +145,8 @@
                   {{ sortDirection === 'asc' ? '↑' : '↓' }}
                 </span>
               </th>
-              <th>Email</th>
+              <th>E-mail</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -158,9 +159,14 @@
               <td>{{s.semester}}</td>
               <td>{{s.email}}</td>
               <td>
+                <span [ngClass]="{'pending': isGradePending(s), 'done': !isGradePending(s)}">
+                  {{ isGradePending(s) ? 'Pending' : 'Done'}}
+                </span>
+              </td>
+              <td>
                 <button class="btn primary" (click)="openEditInfo(s)">Edit Info</button>
                 <button class="btn secondary" (click)="openEditMarks(s)">Marks</button>
-                <button class="btn success" (click)="viewSingleResult(s)">Results</button>
+                <button class="btn success manage-result" (click)="viewSingleResult(s)" [disabled]="isGradePending(s)">Results</button>
                 <button class="btn danger" (click)="deleteStudent(s)">Delete</button>
               </td>
             </tr>
@@ -203,12 +209,13 @@
           </label>
           </div>
 
-          <table class="styled-table">
+          <table class="grade-styled-table">
             <thead>
               <th>Roll</th>
               <th>Name</th>
               <th>Department</th>
-              <th>Semester</th>
+              <th class="grade-semester">Semester</th>
+              <th class="grade-email">E-mail</th>
               <th>Status</th>
               <th>Action</th>
             </thead>
@@ -218,6 +225,7 @@
                 <td>{{ s.name }}</td>
                 <td>{{ s.department }}</td>
                 <td>{{ s.semester }}</td>
+                <td class="grade-email">{{ s.email }}</td>
                 <td>
                   <span [ngClass]="{'pending': isGradePending(s), 'done': !isGradePending(s)}">
                     {{ isGradePending(s) ? 'Pending' : 'Done'}}
@@ -309,7 +317,7 @@
 
             <div class="form-group">
             <label>Semester</label>
-            <select name="semester" required>
+            <select name="semester" required [(ngModel)]="newStudent.semester">
               <option value="1" selected>1</option>
               <option value="2" >2</option>
             </select>
@@ -332,7 +340,7 @@
   <!-- -------------Add Student Popup------------- -->
   <div class="popup-overlay" *ngIf="showStudentPopup">
     <div class="popup-box">
-      <h3>🎉 Student Added Successfully!</h3>
+      <h3>Student Added Successfully!</h3>
       <div class="popup-content">
         <div class="popup-field">
             <p><strong>Roll No : </strong></p>
@@ -449,6 +457,7 @@
     <h2>Student Results</h2>
     <p>View academic performance by students</p>
   </div>
+  <h3>Find Student</h3>
   <div class="result-container">
   <!-- Filter/search bar -->
   <div class="result-filters">
@@ -463,7 +472,11 @@
       <option value="">All Departments</option>
       <option *ngFor="let dept of departments" [value]="dept.name">{{ dept.name }}</option>
     </select>
-
+    <label class="pending-label">Show Pending Grades</label>
+    <label class="switch">
+      <input class = "pending-btn" type="checkbox" [(ngModel)]="isAllPendingEnabled" (change)="toggleAllStatus()">
+      <span class="slider"></span>
+    </label>
     <button class="clear-filter" (click)="clearResultFilters()">Clear</button>
   </div>
 
@@ -476,6 +489,8 @@
         <th>Name</th>
         <th>Department</th>
         <th>Semester</th>
+        <th>E-mail</th>
+        <th>Status</th>
         <th>View Result</th>
       </tr>
     </thead>
@@ -485,8 +500,14 @@
         <td>{{ student.name }}</td>
         <td>{{ student.department }}</td>
         <td>{{ student.semester }}</td>
+        <td>{{ student.email }}</td>
         <td>
-          <button class="view-btn" (click)="viewResult(student)">View</button>
+          <span [ngClass]="{'pending': isGradePending(student), 'done': !isGradePending(student)}">
+            {{ isGradePending(student) ? 'Pending' : 'Done'}}
+          </span>
+        </td>
+        <td>
+          <button class="view-btn" (click)="viewResult(student)" [disabled]="isGradePending(student)">View</button>
         </td>
       </tr>
     </tbody>
@@ -546,27 +567,28 @@
     <div *ngFor="let dept of departments" class="department-card">
       <h3>{{ dept.name }}</h3>
 
-      <div *ngFor="let sem of [1, 2]" class="semester-block">
-        <h4>Semester {{ sem }}</h4>
-          <table class="course-table">
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Course Name</th>
-                <th>Semester</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let c of getCoursesByDeptAndSem(dept.name, sem)">
-                <td>{{ c.code }}</td>
-                <td>{{ c.name }}</td>
-                <td>{{ c.semester }}</td>
-              </tr>
-            </tbody>
-          </table>
-
+      <div class="semester-outer-block">
+        <div *ngFor="let sem of [1, 2]" class="semester-block">
+          <h4>Semester {{ sem }}</h4>
+            <table class="course-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Course Name</th>
+                  <th>Semester</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let c of getCoursesByDeptAndSem(dept.name, sem)">
+                  <td>{{ c.code }}</td>
+                  <td>{{ c.name }}</td>
+                  <td>{{ c.semester }}</td>
+                </tr>
+              </tbody>
+            </table>
+        </div>
       </div>
-
+      
 
       <ng-template #noCourses>
         <p class="no-course">No courses found for this department.</p>

@@ -427,22 +427,6 @@
 .styled-table tr:nth-child(even) {
   background-color: #f9fafb;
 }
-/* .styled-table th,
-.styled-table td {
-  border: 1px solid #ddd;
-  padding: 10px;
-  text-align: left;
-}
-
-.styled-table th {
-  background: #f4f6f8;
-  cursor: pointer;
-  user-select: none;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-} */
-
 .styled-table th:hover {
   background: #eaecee;
 }
@@ -731,8 +715,8 @@ input[readonly] {
 .grade-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    max-width: 1400px;
+    gap: 12px;
+    max-width: 1500px;
 }
 .panel {
     background: white;
@@ -741,7 +725,9 @@ input[readonly] {
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     border: 1px solid #e2e8f0;
 }
-
+.upload-panel{
+  width:425px;
+}
 .panel h3 {
     font-size: 18px;
     font-weight: 600;
@@ -751,6 +737,7 @@ input[readonly] {
 
 .grade-search {
     grid-column: 1;
+    width:1180px;
 }
 .grade-update{
   grid-column: 2;
@@ -847,9 +834,6 @@ margin-bottom: 10px;
     border: 1px solid #e2e8f0;
     border-radius: 4px;
     font-size: 14px;
-}
-.grade-search{
-  width:900px;
 }
 .grade-select {
     width: 60px;
@@ -1112,9 +1096,66 @@ margin-bottom: 10px;
   background: #f9f9f9;
   padding: 10px 15px;
   border-radius: 10px;
+  width:50%;
+  border: 1px solid grey;
+  /* margin: 5px; */
 }
-
+.semester-outer-block{
+  display: flex;
+  gap: 20px;
+}
 .semester-block h4 {
   margin-bottom: 8px;
   color: #444;
+}
+.view-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.manage-result:disabled{
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+/* grade-management-table */
+.grade-styled-table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+}
+.grade-styled-table thead {
+  position: sticky;
+  top: 0; 
+  z-index: 5;
+  background-color: #f4f6f8;
+
+}
+.grade-styled-table th, .grade-styled-table td {
+  padding-top: 3px;
+  padding-bottom: 3px;
+  text-align: left;
+}
+
+.grade-styled-table tbody {
+  display: block;
+  max-height: 549px; 
+  overflow-y: auto;
+  width: 100%;
+}
+
+.grade-styled-table thead,
+.grade-styled-table tbody tr {
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.grade-styled-table thead th{
+  width: 10px;
+}
+.grade-styled-table tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+.grade-styled-table tr:nth-child(even) {
+  background: #fafafa;
 }

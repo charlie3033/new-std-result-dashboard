@@ -84,10 +84,27 @@
             <p>No courses found.</p>
           </ng-template>
         </div>
-        <div class="upload-result">
-          <button class="result-btn upload" (click)="selectedTab = 'result'">View Result</button>
-          <p class="result-update-true">*Result Published</p>
-        </div>
+        <!-- ✅ Template for active button -->
+        <ng-template #resultActive>
+          <div class="profile-result-button">
+            <button class="result-btn active" (click)="selectedTab = 'result'">View Result</button>
+            <p class="result-active-text">*Result Published</p>
+          </div>
+        </ng-template>
+
+        <!-- ✅ Template for disabled button -->
+        <ng-template #resultDisabled>
+          <div class="profile-result-button">
+            <button class="result-btn disabled" disabled>View Result</button>
+            <p class="result-disabled-text">*Result Not Published</p>
+          </div>
+        </ng-template>
+
+        <!-- ✅ Conditionally show -->
+        <ng-container *ngIf="!uploadFlag; else resultDisabled">
+          <ng-container *ngTemplateOutlet="resultActive"></ng-container>
+        </ng-container>
+
 
     </div>
 
@@ -97,7 +114,7 @@
       <div class="profile-header">
         <h2>Result</h2>
       </div>
-      <div class="result-detail">
+      <div class="result-detail" *ngIf="result?.subjects">
         <table class="result-table" *ngIf="result">
           <thead>
             <tr>
@@ -107,7 +124,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let sub of result.subjects">
+            <tr *ngFor="let sub of result?.subjects">
               <td>{{sub.name}}</td>
               <td>{{sub.marks}} / 100</td>
               <td [ngClass]="{'grade-f': getGrade(sub.marks) === 'F'}">{{getGrade(sub.marks)}}</td>
@@ -116,10 +133,10 @@
         </table>
       </div>
       <div class="summary">
-        <p><strong>Total : </strong>{{total}} / {{maxTotal}}</p>
+        <p><strong>Total : </strong>{{result ? total : 0}} / {{result ? maxTotal : 0}}</p>
         <p><strong>Percentage :</strong> {{ percentage }}%</p>
         <p><strong>Status :</strong>
-          <span [class.pass]="result.status === 'pass'" [class.fail]="result.status === 'fail'"> {{ result.status }}</span>
+          <span [class.pass]="result?.status === 'pass'" [class.fail]="result?.status === 'fail'"> {{ result?.status }}</span>
         </p>
       </div>
 
@@ -161,7 +178,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let sub of result.subjects">
+            <tr *ngFor="let sub of result?.subjects">
               <td>{{sub.name}}</td>
               <td>{{sub.marks}} / 100</td>
               <td [ngClass]="{'grade-f': getGrade(sub.marks) === 'F'}">{{getGrade(sub.marks)}}</td>
@@ -170,10 +187,10 @@
         </table>
       </div>
       <div class="print-summary">
-        <p><strong>Total : </strong>{{total}} / {{maxTotal}}</p>
+        <p><strong>Total : </strong>{{result ? total : 0}} / {{result ? maxTotal : 0}}</p>
         <p><strong>Percentage :</strong> {{ percentage }}%</p>
         <p><strong>Status :</strong>
-          <span [class.pass]="result.status === 'pass'" [class.fail]="result.status === 'fail'"> {{ result.status }}</span>
+          <span [class.pass]="result?.status === 'pass'" [class.fail]="result?.status === 'fail'"> {{ result?.status }}</span>
         </p>
       </div>
   </div>
@@ -208,7 +225,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let sub of result.subjects">
+            <tr *ngFor="let sub of result?.subjects">
               <td>{{sub.name}}</td>
               <td>{{sub.marks}} / 100</td>
               <td [ngClass]="{'grade-f': getGrade(sub.marks) === 'F'}">{{getGrade(sub.marks)}}</td>
@@ -217,10 +234,10 @@
         </table>
       </div>
       <div class="print-summary">
-        <p><strong>Total : </strong>{{total}} / {{maxTotal}}</p>
+        <p><strong>Total : </strong>{{result ? total : 0}} / {{result ? maxTotal : 0}}</p>
         <p><strong>Percentage :</strong> {{ percentage }}%</p>
         <p><strong>Status :</strong>
-          <span [class.pass]="result.status === 'pass'" [class.fail]="result.status === 'fail'"> {{ result.status }}</span>
+          <span [class.pass]="result?.status === 'pass'" [class.fail]="result?.status === 'fail'"> {{ result?.status }}</span>
         </p>
       </div>
   </div>
