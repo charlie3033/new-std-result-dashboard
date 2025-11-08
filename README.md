@@ -136,3 +136,15 @@ Student
 <p align="center">
   <img src="./screenshots/student/7.pending.png" width="45%" alt="Student Dashboard 7" />
 </p>
+
+
+### Future Improvements
+  - Role-based authentication guards
+  - Export results as PDF
+  - Bulk result upload via Excel
+  - Dark mode UI
+  - Deploy frontend + backend on cloud
+
+### Author
+Mohit Jariwala
+Full-Stack (MEAN) Developer
