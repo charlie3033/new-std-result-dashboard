@@ -93,7 +93,7 @@ Student
 ## 🎥 UI Screenshots
 
 ### 🧑‍💼 Admin Dashboard  
-```html
+```
 <!-- Admin dashboard screenshots -->
 <p align="center">
   <img src="./screenshots/1.login.png" width="45%" alt="Admin Dashboard 1" />
@@ -136,3 +136,5 @@ Student
 <p align="center">
   <img src="./screenshots/student-screenshot7.png" width="45%" alt="Student Dashboard 7" />
 </p>
+````
+jbjdbf
