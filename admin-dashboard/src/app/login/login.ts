@@ -25,6 +25,7 @@ export class Login {
     this.http.post<any>(' https://result-server-po2j.onrender.com/api/admin/login', credentials).subscribe({
       next: res => {
         localStorage.setItem('token', res.token);
+        localStorage.setItem('adminname',res.admin.username);
         this.router.navigate(['/admin/dashboard']);
       },error: ()=>{
         alert('Invalid credentials');

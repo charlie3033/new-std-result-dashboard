@@ -66,6 +66,8 @@ export class Dash implements OnInit {
 
   constructor(private studentService: StudentService, private cdr: ChangeDetectorRef,private http: HttpClient,private router: Router) {}
 
+
+
   ngOnInit() {
     this.loadActivityLog();
     this.computeStats();
@@ -73,6 +75,7 @@ export class Dash implements OnInit {
     this.loadStudents();
     this.pendingGrades();
     this.loadCourses();
+
     forkJoin({
       students: this.studentService.getAllStudents(),
       departments: this.studentService.getDepartments()
@@ -122,7 +125,7 @@ export class Dash implements OnInit {
     this.studentService.addStudent(this.newStudent).subscribe((res: any) => {
       this.loadStudents();
       this.computeStats();
-      this.logActivity(`Added student ${this.newStudent.name} (${this.newStudent.department}) (sem-${this.newStudent.semester})`);
+      this.logActivity(`Added student ${this.newStudent.name} (${this.newStudent.department}) (sem-${this.newStudent.semester})`,`${localStorage.getItem('adminname')}`);
       this.showNotification("Student added successfully!", "success");
 
       //------------add student popup----------------
@@ -147,7 +150,7 @@ export class Dash implements OnInit {
       .subscribe(() => {
         this.loadStudents();
         this.computeStats();
-        this.logActivity(`Updated info for ${this.editInfoStudent.name}`);
+        this.logActivity(`Updated info for ${this.editInfoStudent.name}`,`${localStorage.getItem('adminname')}`);
         this.showNotification("Student info updated!", "success");
         this.cancel();
         this.cdr.detectChanges();
@@ -176,7 +179,7 @@ export class Dash implements OnInit {
       this.studentService.deleteStudentByRoll(student.roll).subscribe(() => {
         this.loadStudents();
         this.computeStats();
-        this.logActivity(`Deleted student ${student.name}`);
+        this.logActivity(`Deleted student ${student.name}`,`${localStorage.getItem('adminname')}`);
         this.showNotification("Student deleted!", "success");
       });
     }
@@ -303,8 +306,8 @@ export class Dash implements OnInit {
     }
 
     // Save log
-    private logActivity(message: string) {
-      this.studentService.addActivityLog(message).subscribe(() => {
+    private logActivity(message: string,user : string) {
+      this.studentService.addActivityLog(message,user).subscribe(() => {
         this.loadActivityLog(); // refresh UI after adding
       });
     }
@@ -381,7 +384,7 @@ saveStudentMarks() {
   ).subscribe(() => {
     this.loadStudents();
     this.computeStats();
-    this.logActivity(`Updated grades for ${this.selectedStudentForGrade.name}`);
+    this.logActivity(`Updated grades for ${this.selectedStudentForGrade.name}`,`${localStorage.getItem('adminname')}`);
     this.showNotification("Grades updated successfully!", "success");
     this.cancelGradeUpdate();
   });

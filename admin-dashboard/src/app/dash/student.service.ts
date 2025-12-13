@@ -69,8 +69,8 @@ export class StudentService {
     return this.http.get<any[]>(`${this.baseUrl}/activity-log`);
   }
 
-  addActivityLog(message: string){
-    return this.http.post(`${this.baseUrl}/activity-log`, {message});
+  addActivityLog(message: string,user: string){
+    return this.http.post(`${this.baseUrl}/activity-log`, {message,user});
   }
 
   //pending Grades
