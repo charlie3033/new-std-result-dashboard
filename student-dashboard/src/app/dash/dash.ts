@@ -24,7 +24,7 @@ export class Dash {
   percentage = 0;
   uploadFlag = true;
 
-  private baseUrl = 'http://localhost:3000/api';
+  private baseUrl = 'https://result-server-po2j.onrender.com/api';
   constructor(private cdr: ChangeDetectorRef,private http: HttpClient,private router: Router){}
 
   ngOnInit(){
@@ -139,7 +139,7 @@ export class Dash {
   }
 
   loadPendingStatus(){
-    this.http.get<{totalPending: number; students: any[] }>(`http://localhost:3000/api/pendingGrades`)
+    this.http.get<{totalPending: number; students: any[] }>(`https://result-server-po2j.onrender.com/api/pendingGrades`)
     .subscribe((res) => {
       const pendingList = res.students || [];
       const flag = pendingList.some((p: any) => p.studentId === this.student.id);

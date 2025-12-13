@@ -19,7 +19,7 @@ export class Login {
   error = '';
 
   login() {
-  this.http.post('http://localhost:3000/api/students/login', {
+  this.http.post('https://result-server-po2j.onrender.com/api/students/login', {
       email: this.email.trim(),
       password: this.password.trim()
   })
