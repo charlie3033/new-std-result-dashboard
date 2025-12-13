@@ -50,7 +50,7 @@ export class Dash implements OnInit {
   studentResults: any[] = [];
 
   // For Activity Log
-  activityLog: { message: string, time: Date }[] = [];
+  activityLog: { message: string, time: Date, user: string }[] = [];
 
   // For Notification
   notifications: { message: string, type: 'success' | 'error' | 'info' }[] = [];

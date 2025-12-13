@@ -282,6 +282,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let log of activityLog">
+                <td class="msg">{{ log.user }}</td>
                 <td class="time">{{ log.time | date:'yyyy-MM-dd' }} &nbsp;&nbsp;&nbsp;{{log.time | date:'shortTime'}}</td>
                 <td class="msg">{{ log.message }}</td>
               </tr>
