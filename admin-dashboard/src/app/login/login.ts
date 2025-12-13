@@ -22,7 +22,7 @@ export class Login {
       password: this.password
     };
 
-    this.http.post<any>('http://localhost:3000/api/admin/login', credentials).subscribe({
+    this.http.post<any>(' https://result-server-po2j.onrender.com/api/admin/login', credentials).subscribe({
       next: res => {
         localStorage.setItem('token', res.token);
         this.router.navigate(['/admin/dashboard']);
