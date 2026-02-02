@@ -12,9 +12,36 @@
         <input [(ngModel)]="password" id="password" name="password" type="password" placeholder="Password" required />
         <button type="submit">Login</button>
       </form>
+      <a class="forgot" (click)="openForgot()">Forgot Password?</a>
       </div>
       <br>
-      <div class="login-note-tab">
+    </div>
+
+    <!-- Forgot Pass POPUP -->
+    <div class="forgot-modal" *ngIf="showForgot">
+      <div class="box">
+        <h3>Reset Password</h3>
+
+        <div *ngIf="step === 1">
+          <input [(ngModel)]="fp_email" name="fp_email" placeholder="Enter Registered Email"/>
+          <button (click)="sendOtp()">Send OTP</button>
+        </div>
+
+        <div *ngIf="step === 2">
+          <input [(ngModel)]="otp" name="otp" placeholder="Enter OTP" />
+          <button (click)="verifyOtp()">Verify OTP</button>
+        </div>
+
+        <div *ngIf="step === 3">
+          <input type="password" [(ngModel)]="newPass" name="newPass" placeholder="New Password" />
+          <input type="password" [(ngModel)]="confirmPass" name="confirmPass" placeholder="Confirm Password" />
+          <button (click)="changePassword()">Update Password</button>
+        </div>
+
+        <button class="close" (click)="closeForgot()">Close</button>
+      </div>
+    </div>
+      <!-- <div class="login-note-tab">
         <p class="note">Note:-</p>
         <ul class="note-list">
           <li>password will be combination of :-</li>
@@ -22,8 +49,8 @@
           <li>No Space in between letters</li>
           <li>Password is caseSensitive</li>
         </ul>
-      </div>
-    </div>
+      </div> -->
+
 
   </body>
 </html>

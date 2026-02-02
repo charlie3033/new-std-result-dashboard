@@ -388,9 +388,9 @@
         <div class="form-group">
           <label>Department</label>
           <select name="department" [(ngModel)]="editInfoStudent.department" required>
-            <option value="" disabled selected>Select Department</option>
-            <option *ngFor="let dept of departments" [value]="dept.name">
-              {{ dept.name }}
+            <option value="" disabled>Select Department</option>
+            <option *ngFor="let dept of departments" [value]="dept.code">
+              {{ dept.code }} ( {{ dept.name }} )
             </option>
           </select>
         </div>
@@ -398,8 +398,10 @@
         <div class="form-group">
           <label>Semester</label>
           <select name="editSem" [(ngModel)]="editInfoStudent.semester" required>
-            <option value="1" >1</option>
-            <option value="2" >2</option>
+            <option *ngFor="let sem of getSemestersForDept(editInfoStudent.department)"
+              [value]="sem">
+              {{sem}}
+            </option>
           </select>
         </div>
 
@@ -566,8 +568,8 @@
     </div>
       <div class="std-card">
         <div class="top-controls">
-          <button class="add-std-btn" (click)="selectedTab='addDept'">
-            ➕ Add New Department & Courses
+          <button class="add-std-btn" (click)="prepareAddDepartmet()">
+            ➕ Add New Department
           </button>
         </div>
         <hr>
@@ -583,39 +585,107 @@
         </div>
         <div>
           <p style="margin-right: 30px;">Total Number Of Students : <span style="font-weight: bolder;">{{ getTotalStudentsInDept(dept.code) }}</span></p>
-          <button class="btn update-dept" (click)="loadActivityLog()">Update</button>
-          <button class="btn delete-dept" [disabled]="getTotalStudentsInDept(dept.code) > 0">Delete</button>
+          <button class="btn update-dept" (click)="openDeptEditor(dept)">Edit</button>
+          <button type="button" class="btn delete-dept"
+                  [disabled]="getTotalStudentsInDept(dept.code) > 0"
+                  (click)="deleteDepartment(dept)">
+                  Delete</button>
         </div>
       </div>
 
 
       <div class="semester-outer-block">
-        <div *ngFor="let sem of [1, 2]" class="semester-block">
-          <h4>Semester {{ sem }}</h4>
-            <table class="course-table">
-              <thead>
-                <tr>
-                  <th>Code</th>
-                  <th>Course Name</th>
-                  <th>Semester</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let c of getCoursesByDeptAndSem(dept.code, sem)">
-                  <td>{{ c.code }}</td>
-                  <td>{{ c.name }}</td>
-                  <td>{{ c.semester }}</td>
-                </tr>
-              </tbody>
-            </table>
-        </div>
+        <ng-container *ngIf="getSemestersForDept(dept.code).length > 0; else noCourses">
+          <div *ngFor="let sem of getSemestersForDept(dept.code)" class="semester-block">
+            <h4>Semester {{ sem }}</h4>
+              <table class="course-table">
+                <thead>
+                  <tr>
+                    <th>Course Code</th>
+                    <th>Course Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let c of getCoursesByDeptAndSem(dept.code, sem)">
+                    <td>{{ c.code }}</td>
+                    <td>{{ c.name }}</td>
+                  </tr>
+                </tbody>
+              </table>
+          </div>
+        </ng-container>
+        <ng-template #noCourses>
+          <p class="no-course">No courses found for this department.</p>
+        </ng-template>
       </div>
 
 
-      <ng-template #noCourses>
-        <p class="no-course">No courses found for this department.</p>
-      </ng-template>
     </div>
+    </div>
+  </div>
+
+  <div *ngIf="selectedTab==='addDept'" class="tab">
+    <div class="main-header">
+        <h2>Add New Department</h2>
+        <p>Enter the details below to add a new department</p>
+    </div>
+    <div class="std-card">
+      <h2>Department Form</h2>
+      <br>
+      <form (ngSubmit)="addDepartment()" #deptForm="ngForm">
+
+        <div class="form-group">
+          <label>Department Name</label>
+          <input type="text" name="deptname" [(ngModel)]="newDept.name" required placeholder="Enter department name" />
+        </div>
+
+        <div class="form-group">
+          <label>Department Code</label>
+          <input type="text" name="deptcode" [(ngModel)]="newDept.code" required placeholder="Enter department code" />
+        </div>
+
+        <div class="form-group">
+          <label>Head of Department</label>
+          <input type="text" name="depthead" [(ngModel)]="newDept.head" required placeholder="Enter head of department" />
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="add-form-btn success" [disabled]="deptForm.invalid">💾 Save Department</button>
+          <button type="button" class="add-form-btn secondary" (click)="cancelDept()">❌ Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div *ngIf="selectedTab==='editDeptCourses'" class="tab">
+    <div class="main-header">
+      <h2>Manage Courses - {{selectedDept?.name}}</h2>
+    </div>
+    <div class="std-card">
+      <!-- <form> -->
+      <div *ngFor="let sem of deptSemesters; let i=index" class="semester-block">
+        <div class="semester-header">
+          <h3>Semester {{sem.semesterNumber}}</h3>
+          <button *ngIf="showRemoveSemesterButton(i)"
+                  class="remove-sem-btn"
+                  (click)="removeSemesterPair()">
+                  Remove Semesters</button>
+        </div>
+
+        <div *ngFor="let c of sem.courses; let j=index" class="course-row">
+          <input class="course-field" placeholder="Course Name" [(ngModel)]="c.name">
+          <input class="course-field" [(ngModel)]="c.code" readonly>
+          <button class="course-field course-dlt" (click)="removeCourse(i,j)">❌</button>
+        </div>
+        <button class="course-btn" (click)="addCourse(i)">+ Add Course</button>
+        <hr>
+      </div>
+      <button class="course-btn" (click)="addSemester()">+ Add Semester</button>
+      <div class="form-actions">
+        <button class="add-form-btn success" (click)="saveDeptCourses()">💾 Save Courses</button>
+        <button class="add-form-btn secondary" (click)="selectedTab='dept'">Cancel</button>
+      </div>
+      <!-- </form> -->
     </div>
   </div>
 

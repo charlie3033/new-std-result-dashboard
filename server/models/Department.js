@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 
 const departmentSchema = new mongoose.Schema({
     name: String,
-    code: String, // e.g., CSE, ECE
+    code: String, // CSE, ECE
     head: String // Head of Department
 });
 

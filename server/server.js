@@ -12,6 +12,7 @@ const courseRoutes = require("./routes/courseRoutes");
 const departmentRoutes = require("./routes/departmentRoutes");
 const activityLogRoutes = require("./routes/activityLogRoutes");
 const pendingGradesRoutes = require("./routes/pendingGradesRoute");
+const otpRoutes = require("./routes/otpRoutes");
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/api/departments", departmentRoutes); // Departments fetch
 app.use("/api/activity-log", activityLogRoutes); // Activity log routes
 app.use("/api/students", studentRoutes); // Student Login 
 app.use("/api/pendingGrades", pendingGradesRoutes); // Pending grades 
+app.use("/api/otp",otpRoutes); // otp Generator / verify
 
 // Health check route
 app.get("/", (req, res) => {

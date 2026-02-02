@@ -55,17 +55,40 @@ export class StudentService {
   getDepartments(): Observable<any[]>{
     return this.http.get<any[]>(`${this.baseUrl}/departments`);
   }
+  deleteDepartment(deptCode: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/departments/${deptCode}`);
+  }
+
 
   //get courses by department and semester
   getCoursesByDeptAndSem(dept: string, semester: number): Observable<any[]>{
-    return this.http.get<any[]>(`${this.baseUrl}/courses?department=${dept}$semester=${semester}`);
+    return this.http.get<any[]>(`${this.baseUrl}/courses?department=${dept}&semester=${semester}`);
   }
 
   getAllCourses(): Observable<any[]>{
     return this.http.get<any[]>(`${this.baseUrl}/courses/all`);
   }
 
-  //activity log
+  addDepartment(data: any): Observable<any>{
+    return this.http.post(`${this.baseUrl}/departments`, data);
+  }
+
+  addCourse(data: any): Observable<any>{
+    return this.http.post(`${this.baseUrl}/courses`, data);
+  }
+
+  updateCourse(id: string, course: any) {
+    return this.http.put(`${this.baseUrl}/courses/${id}`, course);
+  }
+
+  deleteCourse(id: string) {
+    return this.http.delete(`${this.baseUrl}/courses/${id}`);
+  }
+
+  getCoursesByDepartment(deptCode: string): Observable<any[]>{
+    return this.http.get<any[]>(`${this.baseUrl}/courses/department/${deptCode}`);
+  }
+  //----------activity log---------------------------
   getActivityLogs(): Observable<any[]>{
     return this.http.get<any[]>(`${this.baseUrl}/activity-log`);
   }
@@ -77,7 +100,7 @@ export class StudentService {
     });
   }
 
-  //pending Grades
+  //-----------pending Grades
   getTotalPendingGrades(){
     return this.http.get<{totalPending: number, students: any[]}>(`${this.baseUrl}/pendingGrades`);
   }

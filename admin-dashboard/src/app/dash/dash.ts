@@ -1,8 +1,8 @@
 const EXCEL_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
 
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { StudentService } from './student.service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -19,10 +19,13 @@ import { Router } from '@angular/router';
   styleUrls: ['./dash.css']
 })
 export class Dash implements OnInit {
+  @ViewChild('deptForm') deptForm!: NgForm;
   students: any[] = [];
   departments: any[] = [];
   filterDept: string = "";
   selectedTab: string = 'dashboard';
+  isSubmitting = false;
+
 
   // For Add Student
   newStudent: any = { name: '', department: '', semester: '' };
@@ -65,6 +68,11 @@ export class Dash implements OnInit {
   courses: any[] = [];
 
   dept: any = { name: '', code: '', head: ''};
+  newDept: any = { name: '', code: '', head: ''};
+  selectedDept: any = null;
+  deptSemesters: any[] = [];
+  deptlist: any[] = [];
+
   constructor(private studentService: StudentService, private cdr: ChangeDetectorRef,private http: HttpClient,private router: Router) {}
 
   semester1 = [
@@ -220,6 +228,10 @@ export class Dash implements OnInit {
     this.resultStudent = null;
     this.newStudent = { name: '', department: '', semester: '' };
   }
+  cancelDept() {
+    this.selectedTab = 'dept';
+    this.newDept = { name: '', code: '', head: ''};
+  }
 
   cancelAll() {
     this.selectedTab = 'AllResultTable';
@@ -308,9 +320,15 @@ export class Dash implements OnInit {
   private computeStats() {
     const list = [...this.students];
     this.stats.totalStudents = list.length;
-    this.stats.totalDepartments = new Set(list.map(s => s.department)).size;
+    this.loaddept();
+    this.stats.totalDepartments = this.deptlist.length;
     this.pendingGrades();
   }
+  loaddept(){
+  this.studentService.getDepartments().subscribe(data => {
+    this.deptlist = data || [];
+  });
+}
 
   // ----------------- Activity Log -----------------
     loadActivityLog() {
@@ -553,18 +571,207 @@ toggleAllStatus(){
 loadCourses(){
   this.studentService.getAllCourses().subscribe(data => {
     this.courses = data || [];
+    this.cdr.detectChanges();
     // console.log(this.courses);
   });
 }
 
 getCoursesByDeptAndSem(dept: string, sem: number){
-  return this.courses.filter(
-    c => c.department === dept && c.semester === sem);
+  return this.courses
+  .filter(c => c.department === dept && c.semester === sem)
+  .sort((a,b) => {
+    const numA = parseInt(a.code.replace(/\D/g, ''), 10);
+    const numB = parseInt(b.code.replace(/\D/g, ''), 10);
+    return numA - numB;
+  });
 }
 
 getTotalStudentsInDept(deptCode: string): number {
   return this.students.filter(s => s.department === deptCode).length;
 }
+
+  // ----------------- Add Department -----------------
+  prepareAddDepartmet() {
+    this.newDept = { name: '', code: '', head: '' };
+    this.selectedTab = 'addDept';
+  }
+
+  addDepartment() {
+  if (this.isSubmitting || !this.deptForm.valid) return;
+  this.isSubmitting = true;
+  this.studentService.addDepartment(this.newDept).subscribe({
+    next: () => {
+      this.showNotification("Department added successfully!", "success");
+      this.logActivity(`Added department ${this.newDept.name} (${this.newDept.code})`);
+      this.deptForm.resetForm();
+      this.studentService.getDepartments().subscribe(data => {
+        this.departments = data || [];
+        this.computeStats();
+        this.loadDepartments();
+        this.selectedTab = 'dept';
+        this.isSubmitting = false;
+        this.cdr.detectChanges();
+      });
+    },
+    error: () => {
+      this.isSubmitting = false;
+    }
+  });
+}
+
+
+  openDeptEditor(dept: any) {
+    this.selectedDept = dept;
+    this.selectedTab = 'editDeptCourses';
+    this.loadDeptCourses(dept.code);
+  }
+
+  loadDeptCourses(deptCode: string) {
+  this.studentService.getCoursesByDepartment(deptCode).subscribe(data => {
+    const semMap = new Map<number, any[]>();
+    // Group courses by semester
+    data.forEach((course: any) => {
+      const sem = Number(course.semester);
+      if (!semMap.has(sem)) {
+        semMap.set(sem, []);
+      }
+      semMap.get(sem)?.push(course);
+    });
+    // Convert to UI structure
+    this.deptSemesters = Array.from(semMap.entries()).map(([sem, courses]) => ({
+      semesterNumber: sem,
+      courses: courses
+    }));
+    // Ensure minimum 2 semesters always
+    while (this.deptSemesters.length < 2) {
+      this.deptSemesters.push({
+        semesterNumber: this.deptSemesters.length + 1,
+        courses: []
+      });
+    }
+    this.cdr.detectChanges(); // 🔥 IMPORTANT
+  });
+}
+
+
+  addSemester() {
+    const length = this.deptSemesters.length;
+    if (length >= 8) {
+      this.showNotification("Maximum 8 semesters allowed", "error");
+      return;
+    }
+    const nextSem = this.deptSemesters.length + 1;
+    this.deptSemesters.push({ semesterNumber: nextSem, courses: [] });
+    const snextSem = this.deptSemesters.length + 1;
+    this.deptSemesters.push({ semesterNumber: snextSem, courses: [] });
+  }
+
+  showRemoveSemesterButton(index: number):boolean{
+    return this.deptSemesters.length > 2 && index === this.deptSemesters.length -2;
+  }
+
+  removeSemesterPair() {
+    if (this.deptSemesters.length <= 2) {
+      this.showNotification("Minimum 2 semesters required", "error");
+      return;
+    }
+    this.deptSemesters.splice(-2, 2);
+  }
+  getSemestersForDept(deptCode: string): number[] {
+    const sems = this.courses
+      .filter(c => c.department === deptCode)
+      .map(c => Number(c.semester));
+
+    // remove duplicates + sort
+    return [...new Set(sems)].sort((a, b) => a - b);
+  }
+
+  addCourse(semIndex: any) {
+    const sem = this.deptSemesters[semIndex];
+    const nextIndex = sem.courses.length + 1;
+    sem.courses.push({
+      department: this.selectedDept.code,
+      semester: sem.semesterNumber,
+      name: '',
+      code: `${this.selectedDept.code}${sem.semesterNumber}0${nextIndex}`
+    });
+  }
+
+  removeCourse(semIndex: number, courseIndex: number) {
+    this.deptSemesters[semIndex].courses.splice(courseIndex, 1);
+  }
+
+  saveDeptCourses() {
+    const requests: any[] = [];
+    const currentDbCourses = this.courses.filter(c => c.department === this.selectedDept.code);
+
+    const editedCourses: any[] = [];
+    this.deptSemesters.forEach(sem => {
+      sem.courses.forEach((c: any[]) => editedCourses.push(c));
+    });
+
+    //  ADD or UPDATE
+    editedCourses.forEach(c => {
+      if (c._id) {
+        requests.push(this.studentService.updateCourse(c._id, c));
+      } else {
+        requests.push(this.studentService.addCourse(c));
+      }
+    });
+
+    //  DELETE removed courses
+    currentDbCourses.forEach(dbCourse => {
+      const stillExists = editedCourses.some(c => c._id === dbCourse._id);
+      if (!stillExists) {
+        requests.push(this.studentService.deleteCourse(dbCourse._id));
+      }
+    });
+
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.showNotification("Courses synced successfully!", "success");
+        this.studentService.getAllCourses().subscribe(data => {
+          this.courses = data || [];
+          this.selectedTab = 'dept';
+          this.cdr.detectChanges();
+        });
+        this.logActivity(`Updated courses for department ${this.selectedDept.name} (${this.selectedDept.code})`);
+      },
+    error: () => {
+      this.showNotification("Error saving courses", "error");
+    }
+    });
+
+  }
+
+
+  deleteDepartment(dept: any) {
+    if (this.getTotalStudentsInDept(dept.code) > 0) {
+      this.showNotification("Cannot delete department with students", "error");
+      return;
+    }
+
+    if (!confirm(`Delete department ${dept.name}? This removes all its courses too.`)) {
+      return;
+    }
+
+    this.studentService.deleteDepartment(dept.code).subscribe({
+      next: () => {
+        this.showNotification("Department deleted successfully", "success");
+        this.departments = this.departments.filter(d => d.code !== dept.code);
+        this.loadCourses();
+        this.computeStats();
+        this.logActivity(`Deleted department ${dept.name} (${dept.code})`);
+        this.cdr.detectChanges();
+        this.loadDepartments();
+      },
+      error: (err) => {
+        this.showNotification(err.error?.error || "Delete failed", "error");
+      }
+    });
+
+  }
+
 
 
 
