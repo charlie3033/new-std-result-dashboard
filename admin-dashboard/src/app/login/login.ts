@@ -1,14 +1,11 @@
 
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component,ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
-import { get } from 'http';
-import { Auth } from '@angular/fire/auth';
-import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
-import { inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { error } from 'console';
 
 
 @Component({
@@ -20,17 +17,22 @@ import { CommonModule } from '@angular/common';
 export class Login {
   username='';
   password='';
+  showOtp=false;
+  otp:string='';
+  email:string ='';
+  maskemail:string ='';
+  resendTimer:number=0;
+  timerInterval:any;
+  isLoading=false;
+  isResending = false;
 
-  showOtp: boolean = false;
-  otp: string = '';
-  tempUserId: string = '';
-  adminPhone: string = '';
-  auth = inject(Auth);
-  confirmationResult: any;
 
-  constructor(private http: HttpClient,private router: Router){}
+  constructor(private http: HttpClient,private router: Router,private cdr: ChangeDetectorRef){}
 
   onSubmit(){
+    if(this.isLoading) return;
+    this.isLoading=true;
+
     const credentials = {
       username: this.username,
       password: this.password
@@ -38,44 +40,68 @@ export class Login {
 
     this.http.post<any>(`${environment.apiUrl}/admin/login`, credentials).subscribe({
       next: res => {
-        this.tempUserId = res.userId;
-        this.adminPhone = res.phone;
-        this.sendFirebaseOtp(res.phone);
+        this.showOtp=true;
+        this.email=res.email;
+        this.maskemail=res.maskemail;
+        this.startResendTimer();
+        this.cdr.detectChanges();
+        // localStorage.setItem('token', res.token);
+        // localStorage.setItem('adminname',this.username);
+        // this.router.navigate(['/admin/dashboard']);
       },error: ()=>{
         alert('Invalid credentials');
       }
     });
   }
 
-  sendFirebaseOtp(phone: string) {
-    const appVerifier = new RecaptchaVerifier(
-      this.auth,
-      'recaptcha-container',
-      { size: 'normal' }
-    );
+  sendOtp(){
+    if(this.resendTimer>0 || this.isResending) return;
 
-    signInWithPhoneNumber(this.auth, '+91' + phone, appVerifier)
-      .then(result => {
-        this.confirmationResult = result;
-        this.showOtp = true;
-      })
-      .catch(err => alert(err.message));
-  }
-
-  verifyFirebaseOtp() {
-    this.confirmationResult.confirm(this.otp).then(() => {
-      this.completeLogin();
-    }).catch(() => alert("Invalid OTP"));
-  }
-
-  completeLogin() {
-  this.http.post<any>(`${environment.apiUrl}/admin/otp-success`, { userId: this.tempUserId })
-    .subscribe((res:any)=>{
-      localStorage.setItem('token', res.token);
-      localStorage.setItem('adminname',this.username);
-      this.router.navigate(['/admin/dashboard']);
+    this.isResending = true;
+    this.http.post<any>(`${environment.apiUrl}/admin/send-otp`, {email: this.email})
+    .subscribe({
+      next: () => {
+        this.startResendTimer();
+        this.isResending = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isResending = false;
+        this.cdr.detectChanges();
+      }
     });
-}
+  }
+
+  verifyOtp(){
+    const data = {
+      email: this.email,
+      otp: this.otp
+    };
+    this.http.post<any>(`${environment.apiUrl}/admin/verify-otp`, data).subscribe({
+      next: res => {
+        localStorage.setItem('token', res.token);
+        localStorage.setItem('adminname',this.username);
+        this.router.navigate(['/admin/dashboard']);
+        this.cdr.detectChanges();
+      },error: ()=>{
+        alert('Invalid OTP');
+      }
+    });
+  }
+
+  startResendTimer() {
+    this.resendTimer = 30;
+
+    this.timerInterval = setInterval(() => {
+      this.resendTimer--;
+      this.cdr.detectChanges();
+      if (this.resendTimer <= 0) {
+        clearInterval(this.timerInterval);
+        this.cdr.detectChanges();
+      }
+    }, 1000);
+  }
+
 
 
 

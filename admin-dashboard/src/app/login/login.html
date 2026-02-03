@@ -9,26 +9,44 @@
 
   <!-- LOGIN FORM -->
   <div *ngIf="!showOtp">
-    <div class="input-box">
-      <input type="text" placeholder="Username" [(ngModel)]="username" name="username" required>
-    </div>
+    <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+      <div class="input-box">
+        <input type="text" placeholder="Username" [(ngModel)]="username" name="username" required>
+      </div>
 
-    <div class="input-box">
-      <input type="password" placeholder="Password" [(ngModel)]="password" name="password" required>
-    </div>
+      <div class="input-box">
+        <input type="password" placeholder="Password" [(ngModel)]="password" name="password" required>
+      </div>
 
-    <button class="login-btn" type="button" (click)="onSubmit()">Log in</button>
+      <button class="login-btn" type="submit" [disabled]="isLoading">
+        {{isLoading ? 'Sending OTP...' : 'Log in'}}
+      </button>
+    </form>
   </div>
 
   <!-- OTP FORM -->
   <div *ngIf="showOtp">
-    <p>OTP sent to {{adminPhone}}</p>
-    <input [(ngModel)]="otp" name="otp" placeholder="Enter OTP">
-    <button type="button" (click)="verifyFirebaseOtp()">Verify OTP</button>
+    <form (ngSubmit)="verifyOtp()" #loginForm="ngForm">
+      <div class="input-box">
+        <input type="text" placeholder="Username" [(ngModel)]="username" name="username" disabled>
+      </div>
+      <div class="input-box">
+        <input type="password" placeholder="Password" [(ngModel)]="password" name="password" disabled>
+      </div>
+      <div class="input-box">
+        <input type="text" [(ngModel)]="otp" name="otp" placeholder="Enter OTP"
+          maxlength="6" pattern="[0-9]*" inputmode="numeric" required #otpField="ngModel"
+          autofocus>
+      </div>
+      <div class="input-box">
+        <label>OTP sent to {{maskemail}}</label>
+      </div>
+      <button class="login-btn" type="submit">Verify OTP</button>
+      <button class="link-btn" type="button" (click)="sendOtp()"
+      [disabled]="resendTimer > 0 || isResending">
+      {{isResending ? 'sending...' : resendTimer > 0 ? 'Resend OTP (' + resendTimer + 's)' : 'Resend OTP'}}</button>
+    </form>
   </div>
-
-  <!-- MUST EXIST -->
-  <div id="recaptcha-container"></div>
 </div>
 
   </body>

@@ -32,13 +32,11 @@ body {
 
 .input-box {
   margin-bottom: 20px;
-
+  text-align: center;
 }
 
 .input-box label {
-  display: block;
-  margin-bottom: 5px;
-  color: #555;
+  color: #0e0707;
 }
 
 .input-box input {
@@ -62,6 +60,7 @@ body {
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.3s;
+  margin-left: 8%;
 }
 
 .login-btn:hover {
@@ -82,5 +81,23 @@ body {
 
 .bottom-text a:hover {
   text-decoration: underline;
+}
+
+.link-btn {
+  background: none;
+  cursor: pointer;
+  text-decoration: none;
+  margin-top: 10px;
+  font-size: 14px;
+  color: #043915;
+  border: none;
+}
+.link-btn:hover {
+text-decoration: underline;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
 }
 
