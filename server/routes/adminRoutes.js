@@ -76,7 +76,7 @@ router.post("/login", async (req, res) => {
     // });
     await sgMail.send({
       to: admin.email,
-      from: process.env.EMAIL_USER,
+      from: `Admin Panel <${process.env.EMAIL_USER}>`,
       subject: "Your Login OTP",
       text: `Your OTP is: ${otp}`
     });
@@ -132,7 +132,7 @@ router.post("/send-otp", async (req, res) => {
     
     await sgMail.send({
       to: email,
-      from: process.env.EMAIL_USER,
+      from: `Admin Panel <${process.env.EMAIL_USER}>`,
       subject: "Your New OTP",
       text: `Your OTP is: ${otp}`
     });
