@@ -3,9 +3,9 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/Admin");
 const authAdmin = require("../middleware/authAdmin"); // middleware
-// const nodemailer = require("nodemailer");
-const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(process.env.SENDGRID_KEY);
+const nodemailer = require("nodemailer");
+// const sgMail = require('@sendgrid/mail');
+// sgMail.setApiKey(process.env.SENDGRID_KEY);
 
 
 const router = express.Router();
@@ -63,23 +63,23 @@ router.post("/login", async (req, res) => {
       userId: admin._id,
       expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
     };
-    // let transporter = nodemailer.createTransport({
-    //   service: "gmail",
-    //   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-    // });
+    let transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+    });
 
-    // await transporter.sendMail({
-    //   from: "Admin App",
-    //   to: admin.email,
-    //   subject: "Your Login OTP",
-    //   text: `Your OTP is: ${otp}`
-    // });
-    await sgMail.send({
+    await transporter.sendMail({
+      from: "Admin App",
       to: admin.email,
-      from: process.env.EMAIL_USER,
       subject: "Your Login OTP",
       text: `Your OTP is: ${otp}`
     });
+    // await sgMail.send({
+    //   to: admin.email,
+    //   from: process.env.EMAIL_USER,
+    //   subject: "Your Login OTP",
+    //   text: `Your OTP is: ${otp}`
+    // });
 
     const [name, domain] = admin.email.split("@");
     const visible= name.length > 3 ? name.slice(0,3) : name.slice(0,1);
@@ -117,25 +117,25 @@ router.post("/send-otp", async (req, res) => {
       lastSent: Date.now()
     };
 
-    // const transporter = nodemailer.createTransport({
-    //   service: "gmail",
-    //   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-    // });
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+    });
 
-    // await transporter.sendMail({
-    //   from: "Admin App",
-    //   to: email,
-    //   subject: "Your New OTP",
-    //   text: `Your OTP is: ${otp}`
-    // });
-
-    
-    await sgMail.send({
+    await transporter.sendMail({
+      from: "Admin App",
       to: email,
-      from: process.env.EMAIL_USER,
       subject: "Your New OTP",
       text: `Your OTP is: ${otp}`
     });
+
+    
+    // await sgMail.send({
+    //   to: email,
+    //   from: process.env.EMAIL_USER,
+    //   subject: "Your New OTP",
+    //   text: `Your OTP is: ${otp}`
+    // });
 
     res.json({ msg: "OTP resent" });
 
