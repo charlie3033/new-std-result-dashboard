@@ -5,22 +5,31 @@
   </head>
   <body>
     <div class="login-box">
-      <h2>Admin Login!</h2>
-      <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
-        <div class="input-box">
+  <h2>Admin Login!</h2>
 
-          <input type="text" placeholder="Username" name="username" [(ngModel)]="username" required />
-        </div>
-        <br>
-        <div class="input-box">
-
-          <input type="password" placeholder="Password" name="password" [(ngModel)]="password" required />
-        </div>
-        <br>
-        <div class="login-div">
-        <button class="login-btn" type="submit">Log in</button>
-        </div>
-      </form>
+  <!-- LOGIN FORM -->
+  <div *ngIf="!showOtp">
+    <div class="input-box">
+      <input type="text" placeholder="Username" [(ngModel)]="username" name="username" required>
     </div>
+
+    <div class="input-box">
+      <input type="password" placeholder="Password" [(ngModel)]="password" name="password" required>
+    </div>
+
+    <button class="login-btn" type="button" (click)="onSubmit()">Log in</button>
+  </div>
+
+  <!-- OTP FORM -->
+  <div *ngIf="showOtp">
+    <p>OTP sent to {{adminPhone}}</p>
+    <input [(ngModel)]="otp" name="otp" placeholder="Enter OTP">
+    <button type="button" (click)="verifyFirebaseOtp()">Verify OTP</button>
+  </div>
+
+  <!-- MUST EXIST -->
+  <div id="recaptcha-container"></div>
+</div>
+
   </body>
 </html>
