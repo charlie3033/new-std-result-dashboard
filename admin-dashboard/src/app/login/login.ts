@@ -50,6 +50,9 @@ export class Login {
         // this.router.navigate(['/admin/dashboard']);
       },error: ()=>{
         alert('Invalid credentials');
+        this.isLoading=false;
+        this.showOtp=false;
+        this.cdr.detectChanges();
       }
     });
   }
