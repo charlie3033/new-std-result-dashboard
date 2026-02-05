@@ -4,16 +4,16 @@ const jwt = require("jsonwebtoken");
 const Admin = require("../models/Admin");
 const authAdmin = require("../middleware/authAdmin"); // middleware
 const nodemailer = require("nodemailer");
-// const sgMail = require('@sendgrid/mail');
-// sgMail.setApiKey(process.env.SENDGRID_KEY);
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_KEY);
+
 
 const transporter = nodemailer.createTransport({
-  // service: "gmail",
-  host: "smtp.sendgrid.net",
-  port: 587,
-  secure: false,
-  auth: { user: "apikey"/*process.env.EMAIL_USER*/, pass: process.env.SENDGRID_KEY }
+  service: "gmail",
+  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
 });
+
+
 
 const router = express.Router();
 // let otpStore = {};
@@ -62,40 +62,40 @@ console.log(process.env.EMAIL_PASS ? "PASS OK" : "NO PASS");
       return res.status(500).json({ msg: "Admin email missing" });
     }
 
-    // const existing = otpStore[admin.email];
-    // if (existing && Date.now() < existing.expiresAt - 4 * 60 * 1000) {
-    //   return res.json({ email: admin.email }); // don't resend new OTP
-    // }
+    const existing = admin.otpExpiresAt ? { expiresAt: new Date(admin.otpExpiresAt) } : null;
+    if (existing && Date.now() < existing.expiresAt - 4 * 60 * 1000) {
+      return res.json({ email: admin.email }); // don't resend new OTP
+    }
 
     const otp = Math.floor(100000 + Math.random() * 900000);
-    // otpStore[admin.email] = {
-    //   otp,
-    //   userId: admin._id,
-    //   expiresAt: Date.now() + 10 * 60 * 1000, // 5 minutes
-    //   lastSent: Date.now()
-    // };
     admin.otp = otp.toString();
     admin.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000)
     await admin.save();
     
-    // try{
-      await transporter.sendMail({
-        from: `"Admin App" <${process.env.EMAIL_USER}>`,
+    if(process.env.EMAIL_PASS == null || process.env.EMAIL_PASS === "" || process.env.EMAIL_PASS === "undefined"){
+      try{
+        await sgMail.send({
         to: admin.email,
+        from: `Admin Panel <${process.env.EMAIL_USER}>`,
         subject: "Your Login OTP",
         text: `Your OTP is: ${otp}`
       });
-    // }catch(mailerr){
-    //   return res.status(500).json({ msg: "Failed to send OTP" });
-    // }
+      }catch(mailerr){
+        return res.status(500).json({ msg: "Failed to send OTP" });
+      }
+    }else{
+      try{
+        await transporter.sendMail({
+          from: `"Admin App" <${process.env.EMAIL_USER}>`,
+          to: admin.email,
+          subject: "Your Login OTP",
+          text: `Your OTP is: ${otp}`
+        });
+      }catch(mailerr){
+        return res.status(500).json({ msg: "Failed to send OTP" });
+      }
+    }
     
-    // await sgMail.send({
-    //   to: admin.email,
-    //   from: `Admin Panel <${process.env.EMAIL_USER}>`,
-    //   subject: "Your Login OTP",
-    //   text: `Your OTP is: ${otp}`
-    // });
-
     const [name, domain] = admin.email.split("@");
     const visible= name.length > 3 ? name.slice(0,3) : name.slice(0,1);
     const maskedEmail = visible + '****@' + domain;
@@ -113,12 +113,7 @@ console.log(process.env.EMAIL_PASS ? "PASS OK" : "NO PASS");
 //resend OTP
 router.post("/send-otp", async (req, res) => {
   try {
-    const { email } = req.body;
-    const RESEND_COOLDOWN = 30 * 1000; // 30 seconds
-    // const existing = otpStore[email];
-    // if (existing && Date.now() < existing.lastSent + RESEND_COOLDOWN) {
-    //   return res.status(429).json({ msg: "Wait before requesting again" });
-    // }
+    const { email } = req.body;    
     
     const admin = await Admin.findOne({ email });
     if (!admin) return res.status(404).json({ msg: "Admin not found" });
@@ -130,20 +125,25 @@ router.post("/send-otp", async (req, res) => {
       }
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000);
-
-    // otpStore[email] = {
-    //   otp,
-    //   userId: admin._id,
-    //   expiresAt: Date.now() + 5 * 60 * 1000,
-    //   lastSent: Date.now()
-    // };
+    const otp = Math.floor(100000 + Math.random() * 900000);    
 
     admin.otp = otp.toString();
     admin.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000)
     await admin.save();    
 
-    try{
+    if(process.env.EMAIL_PASS == null || process.env.EMAIL_PASS === "" || process.env.EMAIL_PASS === "undefined"){
+      try{
+        await sgMail.send({
+          to: email,
+          from: `Admin Panel <${process.env.EMAIL_USER}>`,
+          subject: "Your New OTP",
+          text: `Your OTP is: ${otp}`
+        });
+      }catch(mailerr){
+        return res.status(500).json({ msg: "Failed to send OTP" });
+      }
+    }else{
+      try{
       await transporter.sendMail({
         from: `"Admin App" <${process.env.EMAIL_USER}>`,
         to: email,
@@ -153,13 +153,8 @@ router.post("/send-otp", async (req, res) => {
     }catch(mailerr){
       return res.status(500).json({ msg: "Failed to send OTP" });
     }
-    
-    // await sgMail.send({
-    //   to: email,
-    //   from: `Admin Panel <${process.env.EMAIL_USER}>`,
-    //   subject: "Your New OTP",
-    //   text: `Your OTP is: ${otp}`
-    // });
+    }
+
 
     res.json({ msg: "OTP resent" });
 
@@ -174,27 +169,7 @@ router.post("/send-otp", async (req, res) => {
 router.post("/verify-otp", async (req, res) => {
   try {
     const { email, otp } = req.body;
-  //   const record = otpStore[email];
-
-  //   if (!record) {
-  //     return res.status(400).json({ msg: "OTP expired. Login again." });
-  //   }
-
-  //   if (Date.now() > record.expiresAt) {
-  //     delete otpStore[email];
-  //     return res.status(400).json({ msg: "OTP expired" });
-  //   }
-
-  //   if (record.otp != otp) {
-  //     return res.status(400).json({ msg: "Invalid OTP" });
-  //   }
-
-  //   const token = jwt.sign(
-  //     { id: record.userId, role: "admin" },
-  //     process.env.JWT_SECRET,
-  //     { expiresIn: "2h" }
-  //   );
-  //   delete otpStore[email]; // Remove OTP after successful verification
+  
     const admin = await Admin.findOne({ email });
     if (!admin || !admin.otp) {
       return res.status(400).json({ msg: "OTP expired. Login again." });
