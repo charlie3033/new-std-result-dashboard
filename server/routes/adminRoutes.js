@@ -78,16 +78,16 @@ console.log(process.env.EMAIL_PASS ? "PASS OK" : "NO PASS");
     admin.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000)
     await admin.save();
     
-    try{
+    // try{
       await transporter.sendMail({
         from: `"Admin App" <${process.env.EMAIL_USER}>`,
         to: admin.email,
         subject: "Your Login OTP",
         text: `Your OTP is: ${otp}`
       });
-    }catch(mailerr){
-      return res.status(500).json({ msg: "Failed to send OTP" });
-    }
+    // }catch(mailerr){
+    //   return res.status(500).json({ msg: "Failed to send OTP" });
+    // }
     
     // await sgMail.send({
     //   to: admin.email,
