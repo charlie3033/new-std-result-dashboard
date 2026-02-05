@@ -47,6 +47,9 @@ router.post("/register", async (req, res) => {
 // Admin Login
 router.post("/login", async (req, res) => {
   try {
+    console.log(process.env.EMAIL_USER);
+console.log(process.env.EMAIL_PASS ? "PASS OK" : "NO PASS");
+
     const { username, password } = req.body;
     const admin = await Admin.findOne({ username });
     if (!admin) return res.status(401).json({ msg: "Invalid credentials" });
