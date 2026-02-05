@@ -5,8 +5,8 @@
   </head>
   <body>
     <div class="login-box">
-  <h2>Admin Login!</h2>
-
+      <button class="back-btn" type="button" (click)="goBack()" *ngIf="showOtp">⬅ Back</button>
+      <h2>Admin Login!</h2>
   <!-- LOGIN FORM -->
   <div *ngIf="!showOtp">
     <form (ngSubmit)="onSubmit()" #loginForm="ngForm">

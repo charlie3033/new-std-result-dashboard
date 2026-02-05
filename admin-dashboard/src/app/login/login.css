@@ -95,6 +95,18 @@ body {
 .link-btn:hover {
 text-decoration: underline;
 }
+.back-btn {
+  background: none;
+  cursor: pointer;
+  text-decoration: none;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #043915;
+  border: none;
+}
+.back-btn:hover {
+  font-weight: bold;
+}
 
 form {
   display: flex;

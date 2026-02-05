@@ -105,6 +105,14 @@ export class Login {
     }, 1000);
   }
 
+  goBack() {
+    this.showOtp = false;
+    this.otp = '';        // clear OTP field
+    this.isLoading = false; // reset loading state
+    clearInterval(this.timerInterval);
+    this.cdr.detectChanges();
+    window.location.reload();
+  }
 
 
 
